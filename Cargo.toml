@@ -48,6 +48,11 @@ component_dirs = "src/wireguard/esp_wireguard"
 bindings_header = "src/wireguard/bindings.h"
 bindings_module = "wg"
 
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = "src/biometry/BMLite"
+bindings_header = "src/biometry/bindings.h"
+bindings_module = "bmlite"
+
 [package.metadata.esp-idf-sys]
 esp_idf_sdkconfig="sdkconfig"
 

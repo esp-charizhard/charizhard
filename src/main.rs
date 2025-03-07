@@ -5,6 +5,8 @@ use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
 
+/// Handles the BM-Lite sensor module HAL and SPI connection.
+mod biometry;
 /// Handles the http server and its capabilities.
 mod http;
 /// Handles wifi and ethernet capabilities.
