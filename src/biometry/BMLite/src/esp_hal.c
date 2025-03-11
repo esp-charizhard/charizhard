@@ -1,6 +1,7 @@
 #include <driver/spi_master.h>
 #include <driver/gpio.h>
 #include <esp_timer.h>
+#include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -8,6 +9,8 @@
 #include "console_params.h"
 #include "fpc_bep_types.h"
 #include "platform.h"
+
+#define TAG "esp_hal"
 
 #define BM_LITE_SPI_HOST    SPI2_HOST
 
@@ -24,6 +27,11 @@ static spi_device_handle_t spi_handle;
 fpc_bep_result_t hal_board_init(void *params)
 {
     console_initparams_t *p = (console_initparams_t *)params;
+    
+    if (p->iface == COM_INTERFACE) {
+        ESP_LOGE(TAG, "UART Interface not supported!");
+        return FPC_BEP_RESULT_INTERNAL_ERROR;
+    }
 
     spi_bus_config_t buscfg = {
         .miso_io_num = BM_LITE_MISO_PIN,
@@ -31,7 +39,7 @@ fpc_bep_result_t hal_board_init(void *params)
         .sclk_io_num = BM_LITE_SPI_CLK_PIN,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = 1024,
+        .max_transfer_sz = 2048,
     };
 
     spi_device_interface_config_t devcfg = {
@@ -51,7 +59,7 @@ fpc_bep_result_t hal_board_init(void *params)
         return FPC_BEP_RESULT_INTERNAL_ERROR;
     }
 
-    // Init Reset Pin
+    // Init RST Pin
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << BM_LITE_RST_PIN),
         .mode = GPIO_MODE_OUTPUT,
@@ -59,16 +67,24 @@ fpc_bep_result_t hal_board_init(void *params)
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    gpio_config(&io_conf);
 
-    // Init READY Pin (IRQ)
+    ret = gpio_config(&io_conf);
+    if (ret != ESP_OK) {
+        return FPC_BEP_RESULT_INTERNAL_ERROR;
+    }
+
+    // Init IRQ Pin
     io_conf.pin_bit_mask = (1ULL << BM_LITE_IRQ_PIN);
     io_conf.mode = GPIO_MODE_INPUT;
-    gpio_config(&io_conf);
+    
+    ret = gpio_config(&io_conf);
+    if (ret != ESP_OK) {
+        return FPC_BEP_RESULT_INTERNAL_ERROR;
+    }
 
     p->hcp_comm->read = platform_bmlite_spi_receive;
     p->hcp_comm->write = platform_bmlite_spi_send;
-    p->hcp_comm->phy_rx_timeout = p->timeout * 1000;
+    p->hcp_comm->phy_rx_timeout = p->timeout;
 
     return FPC_BEP_RESULT_OK;
 }
@@ -90,7 +106,7 @@ fpc_bep_result_t hal_bmlite_spi_write_read(uint8_t *write, uint8_t *read, size_t
     }
 
     spi_transaction_t t = {
-        .length = size * 8,       // length in bits
+        .length = size * 8,
         .tx_buffer = write,
         .rx_buffer = read,
         .flags = leave_cs_asserted ? SPI_TRANS_CS_KEEP_ACTIVE : 0,
@@ -103,17 +119,12 @@ fpc_bep_result_t hal_bmlite_spi_write_read(uint8_t *write, uint8_t *read, size_t
     return FPC_BEP_RESULT_OK;
 }
 
-
-// --- Timing functions ---
-
-void hal_timebase_init(void)
-{
-    // ESP32's system timer is always running, no init needed
-}
+void hal_timebase_init(void) {} // Unnecessary on ESP32
 
 hal_tick_t hal_timebase_get_tick(void)
 {
-    return esp_timer_get_time() / 1000;  // microseconds to milliseconds
+    // microseconds -> milliseconds
+    return esp_timer_get_time() / 1000;
 }
 
 void hal_timebase_busy_wait(uint32_t ms)
@@ -121,7 +132,7 @@ void hal_timebase_busy_wait(uint32_t ms)
     vTaskDelay(pdMS_TO_TICKS(ms));
 }
 
-// Leave these empty if you aren't using UART
+// Not using UART
 size_t hal_bmlite_uart_write(const uint8_t *data, size_t size)
 {
     return 0;
