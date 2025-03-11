@@ -14,12 +14,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup-environment:
-    name: Setup Environment
+  rust-checks:
+    name: Rust Checks
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    outputs:
-      cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4      
@@ -35,7 +33,7 @@ jobs:
 
       - name: Set ESP32 Environment Variables
         run: |
-          source $HOME/export-esp.sh
+          source $HOME/export-esp.sh  # Source environment variables
           export ESP_IDF_PATH=$HOME/.espressif/esp-idf
           echo "ESP_IDF_PATH set to $ESP_IDF_PATH"
 
@@ -47,60 +45,18 @@ jobs:
           cache-targets: "true"
           cache-provider: "github"
 
-  format-check:
-    name: Format Check
-    runs-on: ubuntu-latest
-    needs: setup-environment
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Fmt Check
         run: cargo fmt --check
+      
+      - 
 
-  audit-check:
-    name: Audit Check
-    runs-on: ubuntu-latest
-    needs: setup-environment
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Cache cargo-audit
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/bin/cargo-audit
-          key: cargo-audit-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-audit-${{ runner.os }}-
-
-      - name: Install cargo-audit (if not cached)
+      - name: Audit Check
         run: |
-          if ! command -v cargo-audit &> /dev/null; then
-            cargo install cargo-audit
-          fi
+          cargo install cargo-audit
+          cargo audit --deny warnings
 
-      - name: Run cargo-audit
-        run: cargo audit --deny warnings
-
-  clippy-check:
-    name: Clippy Check
-    runs-on: ubuntu-latest
-    needs: setup-environment
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run Clippy
+      - name: Clippy Check
         run: cargo clippy -- --deny warnings --no-deps
-
-  build:
-    name: Build Project
-    runs-on: ubuntu-latest
-    needs: setup-environment
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Build Project for ESP32
         run: cargo build --release --target xtensa-esp32-espidf -vv
