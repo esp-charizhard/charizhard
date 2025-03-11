@@ -28,6 +28,8 @@ fn main() -> anyhow::Result<()> {
     let sysloop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
+    biometry::init()?;
+
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
     let eth_netif = net::eth_start(peripherals.pins, peripherals.mac, sysloop.clone())?;
