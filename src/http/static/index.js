@@ -1,9 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     const topContainer = document.querySelectorAll('.top-container');
+    const statusContainer = document.querySelectorAll('.center-container')
 
     topContainer.forEach(container => {
-        container.classList.add('top-container-show');
+        container.classList.add('container-show');
+    })
+    statusContainer.forEach(container => {
+        container.classList.add('container-show');
     })
 });
 
@@ -14,6 +18,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     setInterval(fetchWifiStatus, 2500);
     setInterval(fetchWireguardStatus, 2500);
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    fetchConfig();
 });
 
 async function sleep(time) {
@@ -147,16 +155,17 @@ async function fetchWireguardStatus() {
         const htmlContent = await response.text();
         const statusElement = document.getElementById("wireguard-status");
 
-        if (htmlContent === statusElement.innerHTML){
-            return;
+        if (statusElement.innerHTML.trim() !== htmlContent.trim()) {
+            requestAnimationFrame(() => {
+                statusElement.innerHTML = htmlContent;
+            });
         }
-
-        statusElement.innerHTML = htmlContent;
 
     } catch (error) {
         console.error("Error fetching Wireguard status:", error);
     }
 }
+
 
 async function fetchWifiStatus() {
     try {
@@ -170,16 +179,17 @@ async function fetchWifiStatus() {
         const htmlContent = await response.text();
         const statusElement = document.getElementById("wifi-status");
 
-        if (htmlContent === statusElement.innerHTML){
-            return;
+        if (statusElement.innerHTML.trim() !== htmlContent.trim()) {
+            requestAnimationFrame(() => {
+                statusElement.innerHTML = htmlContent;
+            });
         }
-
-        statusElement.innerHTML = htmlContent;
 
     } catch (error) {
         console.error("Error fetching Wi-Fi status:", error);
     }
 }
+
 
 async function disconnectWifi() {
     try {
@@ -206,5 +216,46 @@ async function disconnectWg() {
 
     } catch (error) {
         console.error("Failed to disconnect from wireguard:", error);
+    }
+}
+
+async function resetConfig() {
+    try {
+        const response = await fetch("/reset-config");
+
+        if (!response.ok) {
+            console.error("Failed to reset configuration:", response.statusText);
+            return;
+        }
+
+        window.location.reload();
+
+    } catch (error) {
+        console.error("Failed to reset configuration:", error);
+    }
+}
+
+async function fetchConfig() {
+    try {
+        const response = await fetch('/fetch-config');
+        if (!response.ok) {
+            console.error("Failed to fetch config:", response.statusText);
+            return
+        }
+
+        const text = await response.text();
+        const params = new URLSearchParams(text);
+
+        // Fill the input fields with the received data
+        document.getElementById('address').value = params.get('address') || '';
+        document.getElementById('port').value = params.get('port') || '';
+        document.getElementById('privkey').value = params.get('privkey') || '';
+        document.getElementById('pubkey').value = params.get('pubkey') || '';
+
+        // Handle the "remember me" checkbox
+        document.getElementById('remember-me').checked = params.get('rember') === 'true';
+
+    } catch (error) {
+        console.error('Error fetching config:', error);
     }
 }
