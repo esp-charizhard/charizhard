@@ -50,3 +50,7 @@ dependencies = [
     "pio",
     "mvrelease",
 ]
+
+[tasks.kys]
+command = "cargo"
+args = ["clean"]

@@ -27,3 +27,5 @@ e = "make erase"
 erase = "make erase"
 m = "make monitor"
 monitor = "make monitor"
+# (Keep yourself safe)
+kys = "make kys"
