@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
@@ -6,6 +7,8 @@ use esp_idf_svc::ipv4::Ipv4Addr;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::wifi::EspWifi;
 
+use crate::biometry;
+use crate::utils::heapless::HeaplessString;
 use crate::utils::nvs::WgConfig;
 
 /// Handles static routes (svgs, css, javascript).
@@ -43,6 +46,7 @@ pub fn start(
 ) -> anyhow::Result<EspHttpServer<'static>> {
     let mut http_server = EspHttpServer::new(&HttpServerConfig {
         http_port: 80,
+        stack_size: 10240,
         ..Default::default()
     })?;
 
@@ -52,19 +56,61 @@ pub fn start(
 
     // Handler to get the main config page
     http_server.fn_handler("/", Method::Get, {
-        let nvs = Arc::clone(&nvs);
         move |mut request| {
             self::check_ip(&mut request)?;
 
             let connection = request.connection();
 
-            let wg_conf = WgConfig::get_config(Arc::clone(&nvs))?;
-
-            let html = index::index_html(&wg_conf)?;
+            let html = index::index_html()?;
 
             connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
             connection.write(html.as_bytes())?;
+
+            Ok::<(), Error>(())
+        }
+    })?;
+
+    http_server.fn_handler("/reset-config", Method::Get, {
+        let nvs = Arc::clone(&nvs);
+
+        move |mut request| {
+            self::check_ip(&mut request)?;
+
+            let connection = request.connection();
+
+            // Overwrite the client's private key in nvs with 0s for a clean wipe.
+            WgConfig::set_config(Arc::clone(&nvs), WgConfig {
+                cli_priv_key: HeaplessString::<64>::from_str(&"0".repeat(256))?,
+                ..Default::default()
+            })?;
+
+            // And then we throw the key in the ocean.
+            biometry::reset()?;
+
+            connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+
+            Ok::<(), Error>(())
+        }
+    })?;
+
+    http_server.fn_handler("/fetch-config", Method::Get, {
+        let nvs = Arc::clone(&nvs);
+
+        move |mut request| {
+            self::check_ip(&mut request)?;
+
+            let connection = request.connection();
+
+            while biometry::check_finger().is_err() {}
+
+            let wg_conf = WgConfig::get_config(Arc::clone(&nvs))?;
+
+            let serialized = serde_urlencoded::to_string(wg_conf)?;
+
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+
+            connection.write(serialized.as_bytes())?;
 
             Ok::<(), Error>(())
         }
