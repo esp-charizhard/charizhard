@@ -7,7 +7,7 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::sys::esp;
 
-use crate::utils::nvs::WgConfig;
+use crate::utils::nvs::WgConfig as NvsWgConfig;
 
 /// Handles the management of the global context for the wireguard tunnel.
 pub mod ctx;
@@ -24,6 +24,9 @@ use esp_idf_svc::sys::wg::{
     wireguard_config_t,
     wireguard_ctx_t,
 };
+
+pub type WgConfig = wireguard_config_t;
+pub type WgCtx = wireguard_ctx_t;
 
 /// The maximum number of attempts to sync system time before declaring the call
 /// to [sync_systime] a failure.
@@ -56,28 +59,26 @@ pub fn sync_systime() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Creates "safe" raw pointers for [`wireguard_ctx_t`] and
-/// [`wireguard_config_t`] by retrieving the set configuration from nvs and
+/// Creates "safe" raw pointers for [`WgCtx`] and
+/// [`WgConfig`] by retrieving the set configuration from nvs and
 /// wrapping them in [`Box`].
-fn create_ctx_conf(
-    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
-) -> anyhow::Result<(*mut wireguard_ctx_t, *mut wireguard_config_t)> {
-    let nvs_conf = WgConfig::get_config(nvs)?;
+fn create_ctx_conf(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(*mut WgCtx, *mut WgConfig)> {
+    let nvs_conf = NvsWgConfig::get_config(nvs)?;
 
-    let config = Box::new(wireguard_config_t {
-        private_key: CString::new(nvs_conf.client_private_key.as_str())?.into_raw(),
+    let config = Box::new(WgConfig {
+        private_key: CString::new(nvs_conf.cli_priv_key.as_str())?.into_raw(),
         listen_port: 51820,
         fw_mark: 0,
-        public_key: CString::new(nvs_conf.server_public_key.as_str())?.into_raw(),
+        public_key: CString::new(nvs_conf.serv_pub_key.as_str())?.into_raw(),
         preshared_key: ptr::null_mut(),
-        allowed_ip: CString::new("192.168.200.2")?.into_raw(),
-        allowed_ip_mask: CString::new("255.255.255.0")?.into_raw(),
+        allowed_ip: CString::new("10.1.1.46")?.into_raw(),
+        allowed_ip_mask: CString::new("255.255.255.255")?.into_raw(),
         endpoint: CString::new(nvs_conf.address.as_str())?.into_raw(),
         port: nvs_conf.port.as_str().parse()?,
         persistent_keepalive: 20,
     });
 
-    let ctx = Box::new(wireguard_ctx_t {
+    let ctx = Box::new(WgCtx {
         config: ptr::null_mut(),
         netif: ptr::null_mut(),
         netif_default: ptr::null_mut(),
@@ -88,9 +89,9 @@ fn create_ctx_conf(
 
 /// Establishes a tunnel with the peer defined in the `nvs` configuration.
 ///
-/// This configuration should be set using the [`WgConfig`] struct. Care should
-/// be taken to always call this function with the `STA netif` connected to an
-/// access point.
+/// This configuration should be set using the [`NvsWgConfig`] struct. Care
+/// should be taken to always call this function with the `STA netif` connected
+/// to an access point.
 ///
 /// No internet connection will result in the function returning
 /// after [`MAX_SNTP_ATTEMPTS`] to sync system time have been expanded. An
@@ -163,19 +164,19 @@ pub fn start_tunnel(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
 /// Wrapper for a C function that requires execution in a tcpip context using
 /// the [`esp_netif_tcpip_exec`] utility.
 unsafe extern "C" fn wg_set_default_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
-    esp_wireguard_set_default(ctx as *mut wireguard_ctx_t)
+    esp_wireguard_set_default(ctx as *mut WgCtx)
 }
 
 /// Wrapper for a C function that requires execution in a tcpip context using
 /// the [`esp_netif_tcpip_exec`] utility.
 unsafe extern "C" fn wg_connect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
-    esp_wireguard_connect(ctx as *mut wireguard_ctx_t)
+    esp_wireguard_connect(ctx as *mut WgCtx)
 }
 
 /// Wrapper for a C function that requires execution in a tcpip context using
 /// the [`esp_netif_tcpip_exec`] utility.
 unsafe extern "C" fn wg_disconnect_wrapper(ctx: *mut core::ffi::c_void) -> i32 {
-    esp_wireguard_disconnect(ctx as *mut wireguard_ctx_t)
+    esp_wireguard_disconnect(ctx as *mut WgCtx)
 }
 
 /// Ends an established tunnel with the peer defined in the `nvs` configuration.

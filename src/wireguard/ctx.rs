@@ -2,11 +2,11 @@ use core::ptr;
 use std::ffi::CString;
 use std::sync::{Arc, Mutex};
 
-use esp_idf_svc::sys::wg::{wireguard_config_t, wireguard_ctx_t};
+use crate::wireguard::{WgConfig, WgCtx};
 
 /// This struct wraps the raw pointers to the wireguard context. We declare it
 /// Send + Sync as it needs to be passed to different threads.
-pub struct Wireguard(pub *mut wireguard_ctx_t, pub *mut wireguard_config_t);
+pub struct Wireguard(pub *mut WgCtx, pub *mut WgConfig);
 
 unsafe impl Send for Wireguard {}
 unsafe impl Sync for Wireguard {}
@@ -14,24 +14,24 @@ unsafe impl Sync for Wireguard {}
 impl Wireguard {
     /// This function should never be called. It only serves to initialize the
     /// [`lazy_static::lazy_static!`] macro.
-    fn new(ctx: *mut wireguard_ctx_t, config: *mut wireguard_config_t) -> Self {
+    fn new(ctx: *mut WgCtx, config: *mut WgConfig) -> Self {
         Wireguard(ctx, config)
     }
 
-    /// Stores the wireguard [`wireguard_ctx_t`] and [`wireguard_config_t`]
+    /// Stores the wireguard [`WgCtx`] and [`WgConfig`]
     /// context pointers for safekeeping.
     ///
     /// This function should only ever be called when a wireguard tunnel is
     /// established with a peer using [`start_tunnel`].
     ///
     /// [`start_tunnel`]: crate::wireguard::start_tunnel
-    pub fn set(&mut self, ctx: *mut wireguard_ctx_t, config: *mut wireguard_config_t) {
+    pub fn set(&mut self, ctx: *mut WgCtx, config: *mut WgConfig) {
         log::warn!("Storing Wireguard context pointers!");
         self.0 = ctx;
         self.1 = config;
     }
 
-    /// Checks if a wireguard [`wireguard_ctx_t`] context pointer is stored.
+    /// Checks if a wireguard [`WgCtx`] context pointer is stored.
     ///
     /// If so, and unless undefined behavior is achieved by improper use of
     /// other functions we know that we are connected to a peer through a
