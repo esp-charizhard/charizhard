@@ -1,8 +1,10 @@
+use std::str::FromStr;
+
 use heapless::String;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Wrapper on [`heapless::String`] for additional capabilities.
-#[derive(Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
 
 impl<const N: usize> HeaplessString<N> {
@@ -58,5 +60,20 @@ impl<const N: usize> TryInto<heapless::String<N>> for HeaplessString<N> {
 
     fn try_into(self) -> anyhow::Result<heapless::String<N>> {
         Ok(self.0)
+    }
+}
+
+impl<const N: usize> FromStr for HeaplessString<N> {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> anyhow::Result<Self> {
+        if s.len() > N {
+            return Err(anyhow::anyhow!("String too long"));
+        }
+
+        let mut heapless_string = HeaplessString::new();
+        heapless_string.push_str(s)?;
+
+        Ok(heapless_string)
     }
 }

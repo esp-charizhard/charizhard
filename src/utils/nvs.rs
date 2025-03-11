@@ -2,12 +2,12 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use heapless::String;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::heapless::HeaplessString;
 
 /// Stores the wireguard configuration.
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct WgConfig {
     #[serde(rename = "address")]
     pub address: HeaplessString<32>,
@@ -16,10 +16,10 @@ pub struct WgConfig {
     pub port: HeaplessString<16>,
 
     #[serde(rename = "privkey")]
-    pub client_private_key: HeaplessString<64>,
+    pub cli_priv_key: HeaplessString<64>,
 
     #[serde(rename = "pubkey")]
-    pub server_public_key: HeaplessString<64>,
+    pub serv_pub_key: HeaplessString<64>,
 
     #[serde(rename = "rember", default)]
     pub remember_me: HeaplessString<8>,
@@ -40,6 +40,7 @@ impl WgConfig {
     /// Retrieves and sanitizes a key from nvs.
     fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<String<N>> {
         let mut buf = [0u8; N];
+
         nvs.get_str(key, &mut buf)?;
 
         let raw_value = core::str::from_utf8(&buf)
@@ -58,8 +59,8 @@ impl WgConfig {
 
         nvs.set_str(Self::ADDR, config.address.clean_string().as_str())?;
         nvs.set_str(Self::PORT, config.port.clean_string().as_str())?;
-        nvs.set_str(Self::CLIENT_PRIV, config.client_private_key.clean_string().as_str())?;
-        nvs.set_str(Self::SERVER_PUB, config.server_public_key.clean_string().as_str())?;
+        nvs.set_str(Self::CLIENT_PRIV, config.cli_priv_key.clean_string().as_str())?;
+        nvs.set_str(Self::SERVER_PUB, config.serv_pub_key.clean_string().as_str())?;
 
         if config.remember_me.as_str() == "on" {
             nvs.set_str(Self::REMEMBER_ME, "true")?;
@@ -87,13 +88,13 @@ impl WgConfig {
             )
             .clean_string(),
 
-            client_private_key: HeaplessString(
+            cli_priv_key: HeaplessString(
                 WgConfig::get_key::<64>(&nvs, Self::CLIENT_PRIV)
                     .unwrap_or_else(|_| Self::DEFAULT_CLIENT_PRIV.try_into().unwrap()),
             )
             .clean_string(),
 
-            server_public_key: HeaplessString(
+            serv_pub_key: HeaplessString(
                 WgConfig::get_key::<64>(&nvs, Self::SERVER_PUB)
                     .unwrap_or_else(|_| Self::DEFAULT_SERVER_PUB.try_into().unwrap()),
             )
@@ -109,7 +110,7 @@ impl WgConfig {
 }
 
 /// Stores the WiFi configuration.
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct WifiConfig {
     #[serde(rename = "ssid")]
     pub sta_ssid: HeaplessString<32>,
