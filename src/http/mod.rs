@@ -5,6 +5,7 @@ use anyhow::Error;
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpConnection, EspHttpServer, Method, Request};
 use esp_idf_svc::ipv4::Ipv4Addr;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
+use esp_idf_svc::sys::esp_task_wdt_reset;
 use esp_idf_svc::wifi::EspWifi;
 
 use crate::biometry;
@@ -105,7 +106,12 @@ pub fn start(
 
             let connection = request.connection();
 
-            while biometry::check_finger().is_err() {}
+            while biometry::check_finger().is_err() {
+                unsafe {
+                    // If the request hangs we don't want the dog to bark.
+                    esp_task_wdt_reset();
+                }
+            }
 
             let wg_conf = WgConfig::get_config(Arc::clone(&nvs))?;
 
