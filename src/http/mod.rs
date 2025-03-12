@@ -81,11 +81,14 @@ pub fn start(
 
             // Overwrite the client's private key in nvs with 0s for a clean wipe.
             WgConfig::set_config(Arc::clone(&nvs), WgConfig {
-                cli_priv_key: HeaplessString::<64>::from_str(&"0".repeat(256))?,
-                ..Default::default()
+                address: HeaplessString::<32>::from_str(&"\0".repeat(32))?,
+                port: HeaplessString::<16>::from_str(&"\0".repeat(16))?,
+                cli_priv_key: HeaplessString::<64>::from_str(&"\0".repeat(64))?,
+                serv_pub_key: HeaplessString::<64>::from_str(&"\0".repeat(64))?,
+                remember_me: HeaplessString::<8>::from_str(&"\0".repeat(8))?,
             })?;
 
-            // And then we throw the key in the ocean.
+            // Remove all templates from the sensor
             biometry::reset()?;
 
             connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
