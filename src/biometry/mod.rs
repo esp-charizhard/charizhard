@@ -1,6 +1,7 @@
 use esp_idf_svc::sys::bmlite::{console_initparams_t, HCP_arg_t, HCP_comm_t};
 
 mod command;
+mod config;
 pub mod ctx;
 mod logic;
 
