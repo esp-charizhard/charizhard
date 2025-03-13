@@ -38,6 +38,7 @@ mod functions {
         bep_uart_speed_set,
         bep_unique_id_get,
         bep_version,
+        platform_init,
     };
 }
 
