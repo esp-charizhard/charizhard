@@ -1,15 +1,14 @@
 use esp_idf_svc::sys::bmlite::{console_initparams_t, HCP_arg_t, HCP_comm_t};
 
-mod command;
-mod config;
-pub mod ctx;
+mod commands;
+mod ctx;
 mod logic;
 
 type HcpCom = HCP_comm_t;
 type Params = console_initparams_t;
 type HcpArg = HCP_arg_t;
 
-pub use logic::{check_finger, init, reset};
+pub use logic::{check_user, enroll_user, init, reset};
 
 #[allow(unused)]
 mod functions {
