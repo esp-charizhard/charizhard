@@ -56,6 +56,9 @@ bindings_module = "bmlite"
 [package.metadata.esp-idf-sys]
 esp_idf_sdkconfig="sdkconfig"
 
+[package.metadata.cargo-machete]
+ignored = ["embedded-svc"]
+
 [dependencies]
 log = { version = "0.4", default-features = false }
 esp-idf-svc = { version = "0.51", default-features = false, features = ["std"] }
