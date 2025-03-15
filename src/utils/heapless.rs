@@ -26,6 +26,10 @@ impl<const N: usize> HeaplessString<N> {
         self.0.as_str()
     }
 
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_str().as_bytes()
+    }
+
     fn chars(&self) -> std::str::Chars<'_> {
         self.0.chars()
     }
