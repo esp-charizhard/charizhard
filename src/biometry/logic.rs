@@ -2,7 +2,7 @@ use core::ptr;
 
 use esp_idf_svc::sys::bmlite::{interface_t_SPI_INTERFACE, MTU};
 
-use super::command::*;
+use super::commands::*;
 use super::ctx::SENSOR_CTX;
 use super::{HcpArg, HcpCom, Params};
 
@@ -37,7 +37,7 @@ fn init_config() -> anyhow::Result<(*mut Params, *mut HcpCom)> {
 }
 
 /// Initializes the sensor.
-pub fn init() -> anyhow::Result<()> {
+pub fn init(init_spi: bool) -> anyhow::Result<()> {
     log::info!("Initializing Sensor..");
 
     let mut ctx = SENSOR_CTX.lock().unwrap();
@@ -50,14 +50,8 @@ pub fn init() -> anyhow::Result<()> {
 
     // This needs to be called before any other bmlite interface function. Failure
     // to do this results will invariably result in UB.
-    init_sensor(params)?;
-
-    // First use of the sensor.
-    if template_count(chain)? == 0 {
-        calibrate_sensor(chain)?;
-        software_reset(chain)?;
-        enroll_finger(chain)?;
-        save_template(chain, 1)?;
+    if init_spi {
+        init_sensor(params)?;
     }
 
     ctx.set(params, chain);
@@ -74,7 +68,7 @@ pub fn reset() -> anyhow::Result<()> {
     let mut ctx = SENSOR_CTX.lock().unwrap();
 
     if !ctx.is_set() {
-        return Err(anyhow::anyhow!("SENSOR_CTX is not set!"));
+        return Ok(());
     }
 
     reset_sensor_calibration(ctx.chain)?;
@@ -86,19 +80,49 @@ pub fn reset() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Enrolls a a new user. This should only ever need to be done once per key
+/// life, or when the key has been reset to factory settings.
+pub fn enroll_user() -> anyhow::Result<()> {
+    log::info!("Enrolling user..");
+
+    let mut ctx = SENSOR_CTX.lock().unwrap();
+
+    if !ctx.is_set() {
+        log::warn!("SENSOR_CTX was not set. Initializing..");
+
+        // init needs the lock
+        drop(ctx);
+        init(false)?;
+
+        // retake
+        ctx = SENSOR_CTX.lock().unwrap();
+    }
+
+    // Verify no other user is already enrolled
+    if template_count(ctx.chain)? == 0 {
+        calibrate_sensor(ctx.chain)?;
+        software_reset(ctx.chain)?;
+        enroll_finger(ctx.chain)?;
+        save_template(ctx.chain, 1)?;
+    }
+
+    Ok(())
+}
+
 /// Checks whether a finger is recognized.
 /// Care should be taken to call this function AFTER a finger has already been
 /// enrolled. Failure to do this will invariably result in UB.
-pub fn check_finger() -> anyhow::Result<()> {
+pub fn check_user() -> anyhow::Result<()> {
     log::info!("Checking finger..");
 
     let ctx = SENSOR_CTX.lock().unwrap();
 
     if !ctx.is_set() {
+        log::warn!("SENSOR_CTX is not set! Cannot check non-existent.");
         return Err(anyhow::anyhow!("SENSOR_CTX is not set!"));
     }
 
-    match identify_finger(ctx.chain, 10000, 1) {
+    match identify_finger(ctx.chain, 3000, 1) {
         Ok(true) => {
             log::info!("Finger OK.");
             Ok(())
@@ -107,9 +131,6 @@ pub fn check_finger() -> anyhow::Result<()> {
             log::warn!("Finger KO.");
             Err(anyhow::anyhow!("Finger KO."))
         }
-        Err(_) => {
-            log::warn!("Failed to identify finger!");
-            Err(anyhow::anyhow!("Failed to identify finger!"))
-        }
+        Err(_) => Err(anyhow::anyhow!("Failed to identify finger!")),
     }
 }
