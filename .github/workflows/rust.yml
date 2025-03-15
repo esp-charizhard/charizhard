@@ -47,8 +47,6 @@ jobs:
 
       - name: Fmt Check
         run: cargo fmt --check
-      
-      - 
 
       - name: Audit Check
         run: |
