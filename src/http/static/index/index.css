@@ -8,22 +8,13 @@ body{
     font-family: Arial, sans-serif;
     color: white;
     font-weight: bold;
-    font-size: 0.9em;
+    font-size: 0.9vw;
 }
 
 h1{
     text-align: center;
-    font-size: 1.8em;
+    font-size: 1.3vw;
     color: #ffffff;
-    margin-bottom: 20px;
-}
-
-label{
-    text-align: left;
-    font-size: 1em;
-    color: #f0f0f0;
-    margin: 5% 0 2.5%;
-    display: block;
 }
 
 input[type="text"],
@@ -35,7 +26,7 @@ input[type="password"]{
     border-radius: 4px;
     background-color: #3a3a4f;
     color: white;
-    font-size: 1em;
+    font-size: 1vw;
     box-sizing: border-box;
     transition: border-color 0.3s;
     text-align: center;
@@ -53,7 +44,7 @@ button{
     background-color: #ff5733;
     border: none;
     color: white;
-    font-size: 1.1em;
+    font-size: 1vw;
     border-radius: 3px;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -72,7 +63,7 @@ button:active{
 
 .top-container{
     background-color: #2e2e3e;
-    padding: 20px 25px;
+    padding: 2% 2%;
     border-radius: 3%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     max-width: 400px;
@@ -83,46 +74,12 @@ button:active{
     opacity: 0; 
     transform: translateY(-20px); 
     transition: opacity 0.3s, transform 0.3s;
-    margin-left: 10%;
-    margin-right: 10%;
-}
-
-
-
-.status-container {
-    background-color: #2e2e3e;
-    padding: 25px 30px;
-    border-radius: 3%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.center-container {
-    display: inline-block;
-    width: 100%;
-}
-
-.reset-block {
-    margin: auto;
-    width: 100%;
-    background-color: #2e2e3e;
-    padding: 25px 30px;
-    border-radius: 5%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    box-sizing: border-box;
-    margin-top: 5%;
 }
 
 .container-show{
     opacity: 1;
     transform: translateY(0);
     transition: opacity 0.3s, transform 0.3s;
-}
-
-.error{
-    color: red;
 }
 
 .scrollable-box {
@@ -166,15 +123,21 @@ button:active{
     transition: border-color 0.3s;
     cursor: pointer;
     justify-content: center;
-    width: 100%; /* You can adjust the width based on your layout */
-    height: auto; /* Let the height adjust based on the content */
+    width: 100%;
+    height: auto;
 }
 
 .auth-method img,
-.signal-strength img {
-    width: 100%; /* Scale image to the containerâ€™s width */
-    height: 100%; /* Scale image to the containerâ€™s height */
-    object-fit: contain; /* Ensures the image maintains aspect ratio */
+.signal-strength img,
+.svg-status-text-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.svg-status-img {
+    width: 2vw;
+    height: auto;
 }
 
 .ssid {
@@ -238,7 +201,6 @@ button:active{
     align-items: center;
 }
 
-
 .wifi-status-block {
     padding-top: 7.5%;
 }
@@ -251,12 +213,7 @@ button:active{
     margin-bottom: 5%;
 }
 
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 3%;
-}
-
-.checkbox-container input[type="checkbox"] {
-    margin: 0;
+#wg-status-message {
+    text-align: center;
+    margin: 1%;
 }

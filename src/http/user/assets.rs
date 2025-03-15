@@ -3,12 +3,40 @@ use esp_idf_svc::http::server::{EspHttpServer, Method};
 
 /// Sets the static routes for the http server.
 pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()> {
+    http_server.fn_handler("/admin.js", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/admin/admin.js");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
+    http_server.fn_handler("/admin.css", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/admin/admin.css");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/css")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
     http_server.fn_handler("/index.js", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
         let connection = request.connection();
 
-        let file = include_str!("./static/index.js");
+        let file = include_str!("../static/index/index.js");
 
         connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
 
@@ -22,7 +50,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
 
         let connection = request.connection();
 
-        let file = include_str!("./static/index.css");
+        let file = include_str!("../static/index/index.css");
 
         connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/css")])?;
 
@@ -34,7 +62,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/spinner.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/spinner.svg");
+        let file = include_str!("../static/assets/spinner.svg");
 
         let connection = request.connection();
 
@@ -51,7 +79,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/signal-1.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/signal-1.svg");
+        let file = include_str!("../static/assets/signal-1.svg");
 
         let connection = request.connection();
 
@@ -68,7 +96,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/signal-2.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/signal-2.svg");
+        let file = include_str!("../static/assets/signal-2.svg");
 
         let connection = request.connection();
 
@@ -85,7 +113,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/signal-3.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/signal-3.svg");
+        let file = include_str!("../static/assets/signal-3.svg");
 
         let connection = request.connection();
 
@@ -102,7 +130,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/signal-4.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/signal-4.svg");
+        let file = include_str!("../static/assets/signal-4.svg");
 
         let connection = request.connection();
 
@@ -119,7 +147,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/unlocked.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/unlocked.svg");
+        let file = include_str!("../static/assets/unlocked.svg");
 
         let connection = request.connection();
 
@@ -136,7 +164,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/locked.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/locked.svg");
+        let file = include_str!("../static/assets/locked.svg");
 
         let connection = request.connection();
 
@@ -153,7 +181,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/connected.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/connected.svg");
+        let file = include_str!("../static/assets/connected.svg");
 
         let connection = request.connection();
 
@@ -170,7 +198,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
     http_server.fn_handler("/disconnected.svg", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 
-        let file = include_str!("./static/assets/disconnected.svg");
+        let file = include_str!("../static/assets/disconnected.svg");
 
         let connection = request.connection();
 

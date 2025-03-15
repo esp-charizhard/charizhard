@@ -1,18 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
     const topContainer = document.querySelectorAll('.top-container');
-    const statusContainer = document.querySelectorAll('.center-container')
 
     topContainer.forEach(container => {
-        container.classList.add('container-show');
-    })
-    statusContainer.forEach(container => {
         container.classList.add('container-show');
     })
 });
 
 document.addEventListener("DOMContentLoaded", function() {
-
     fetchWifiStatus();
     fetchWireguardStatus();
 
@@ -24,60 +18,29 @@ document.addEventListener("DOMContentLoaded", function() {
     fetchConfig();
 });
 
-async function sleep(time) {
-    await new Promise(resolve => setTimeout(resolve, time))
+async function connectWg() {
+    const statusDiv = document.getElementById('wg-status-message');
+
+    try {
+        const response = await fetch("/connect-wg")
+
+        if (response.status === 401) {
+            statusDiv.textContent = "Finger KO";
+            statusDiv.style.color = 'red';
+        } else if (response.ok) {
+            statusDiv.textContent = "Finger OK";
+            statusDiv.style.color = 'green';
+        } else {
+            statusDiv.textContent = "Failed to connect";
+            statusDiv.style.color = 'orange';
+        }
+
+    } catch (error) {
+        console.error("Failed to connect to WireGuard:", error);
+        statusDiv.textContent = "Failed to connect";
+        statusDiv.style.color = 'orange';
+    }
 }
-
-document.getElementById('config').addEventListener('submit', function(event) {
-    let isValid = true;
-
-    function setError(id, message) {
-        const errorDiv = document.getElementById(id);
-        errorDiv.textContent = message;
-        isValid = false;
-    }
-
-    function clearError(id) {
-        const errorDiv = document.getElementById(id);
-        errorDiv.textContent = '';
-    }
-
-    // Validate WireGuard Address
-    const address = document.getElementById('address').value;
-    if (address && !/^(\d{1,3}\.){3}\d{1,3}$/.test(address)) {
-        setError('address-error', "Must be a valid IP address.");
-    } else {
-        clearError('address-error');
-    }
-
-    // Validate WireGuard Port
-    const port = document.getElementById('port').value;
-    if (port && (!/^\d{1,5}$/.test(port) || parseInt(port) > 65535)) {
-        setError('port-error', "Must be a valid port between 0 and 65535.");
-    } else {
-        clearError('port-error');
-    }
-
-    // Validate Client Private Key
-    const privKey = document.getElementById('privkey').value;
-    if (privKey.length != 44) {
-        setError('privkey-error', "Must be 44 characters long.");
-    } else {
-        clearError('privkey-error');
-    }
-
-    // Validate Remote Host Public Key
-    const pubKey = document.getElementById('pubkey').value;
-    if (pubKey.length != 44) {
-        setError('pubkey-error', "Must be 44 characters long.");
-    } else {
-        clearError('pubkey-error');
-    }
-
-    if (!isValid) {
-        event.preventDefault();
-    }
-});
 
 function connectWifi(event) {
     event.preventDefault();
@@ -216,46 +179,5 @@ async function disconnectWg() {
 
     } catch (error) {
         console.error("Failed to disconnect from wireguard:", error);
-    }
-}
-
-async function resetConfig() {
-    try {
-        const response = await fetch("/reset-config");
-
-        if (!response.ok) {
-            console.error("Failed to reset configuration:", response.statusText);
-            return;
-        }
-
-        window.location.reload();
-
-    } catch (error) {
-        console.error("Failed to reset configuration:", error);
-    }
-}
-
-async function fetchConfig() {
-    try {
-        const response = await fetch('/fetch-config');
-        if (!response.ok) {
-            console.error("Failed to fetch config:", response.statusText);
-            return
-        }
-
-        const text = await response.text();
-        const params = new URLSearchParams(text);
-
-        // Fill the input fields with the received data
-        document.getElementById('address').value = params.get('address') || '';
-        document.getElementById('port').value = params.get('port') || '';
-        document.getElementById('privkey').value = params.get('privkey') || '';
-        document.getElementById('pubkey').value = params.get('pubkey') || '';
-
-        // Handle the "remember me" checkbox
-        document.getElementById('remember-me').checked = params.get('rember') === 'true';
-
-    } catch (error) {
-        console.error('Error fetching config:', error);
     }
 }

@@ -1,27 +1,20 @@
-use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
 use esp_idf_svc::http::server::{Configuration as HttpServerConfig, EspHttpConnection, EspHttpServer, Method, Request};
 use esp_idf_svc::ipv4::Ipv4Addr;
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use esp_idf_svc::sys::esp_task_wdt_reset;
 use esp_idf_svc::wifi::EspWifi;
 
-use crate::biometry;
-use crate::utils::heapless::HeaplessString;
-use crate::utils::nvs::WgConfig;
-
-/// Handles static routes (svgs, css, javascript).
-mod assets_routes;
-/// Handles the main page route.
-mod index;
-/// Handles wireguard related routes.
-mod wg_routes;
-/// Handles wifi related routes.
-mod wifi_routes;
-
 use super::net::ETH_GATEWAY;
+
+mod admin;
+mod cert;
+mod user;
+
+use admin::{admin_html, set_config_routes};
+pub use cert::fetch_config;
+use user::{index_html, set_assets_routes, set_wg_routes, set_wifi_routes};
 
 /// Checks that the source ip of the request is [`ETH_GATEWAY`] + 1. This
 /// function should be called at the beginning of every call to `fn_handler` to
@@ -51,9 +44,10 @@ pub fn start(
         ..Default::default()
     })?;
 
-    assets_routes::set_routes(&mut http_server)?;
-    wg_routes::set_routes(&mut http_server, Arc::clone(&nvs))?;
-    wifi_routes::set_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
+    set_assets_routes(&mut http_server)?;
+    set_wg_routes(&mut http_server, Arc::clone(&nvs))?;
+    set_wifi_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
+    set_config_routes(&mut http_server, Arc::clone(&nvs))?;
 
     // Handler to get the main config page
     http_server.fn_handler("/", Method::Get, {
@@ -62,7 +56,7 @@ pub fn start(
 
             let connection = request.connection();
 
-            let html = index::index_html()?;
+            let html = index_html()?;
 
             connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
@@ -72,54 +66,17 @@ pub fn start(
         }
     })?;
 
-    http_server.fn_handler("/reset-config", Method::Get, {
-        let nvs = Arc::clone(&nvs);
-
+    http_server.fn_handler("/admin", Method::Get, {
         move |mut request| {
             self::check_ip(&mut request)?;
 
             let connection = request.connection();
 
-            // Overwrite the client's private key in nvs with 0s for a clean wipe.
-            WgConfig::set_config(Arc::clone(&nvs), WgConfig {
-                address: HeaplessString::<32>::from_str(&"\0".repeat(32))?,
-                port: HeaplessString::<16>::from_str(&"\0".repeat(16))?,
-                cli_priv_key: HeaplessString::<64>::from_str(&"\0".repeat(64))?,
-                serv_pub_key: HeaplessString::<64>::from_str(&"\0".repeat(64))?,
-                remember_me: HeaplessString::<8>::from_str(&"\0".repeat(8))?,
-            })?;
-
-            // Remove all templates from the sensor
-            biometry::reset()?;
-
-            connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
-
-            Ok::<(), Error>(())
-        }
-    })?;
-
-    http_server.fn_handler("/fetch-config", Method::Get, {
-        let nvs = Arc::clone(&nvs);
-
-        move |mut request| {
-            self::check_ip(&mut request)?;
-
-            let connection = request.connection();
-
-            while biometry::check_finger().is_err() {
-                unsafe {
-                    // If the request hangs we don't want the dog to bark.
-                    esp_task_wdt_reset();
-                }
-            }
-
-            let wg_conf = WgConfig::get_config(Arc::clone(&nvs))?;
-
-            let serialized = serde_urlencoded::to_string(wg_conf)?;
+            let html = admin_html()?;
 
             connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
-            connection.write(serialized.as_bytes())?;
+            connection.write(html.as_bytes())?;
 
             Ok::<(), Error>(())
         }

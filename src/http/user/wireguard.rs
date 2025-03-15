@@ -6,7 +6,7 @@ use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 
 use crate::utils::nvs::WgConfig;
-use crate::wireguard as wg;
+use crate::{biometry, wireguard as wg};
 
 lazy_static::lazy_static!(
     static ref WG_LOCK: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
@@ -15,17 +15,25 @@ lazy_static::lazy_static!(
 /// Sets the Wireguard related routes for the http server.
 pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
-    http_server.fn_handler("/connect-wg", Method::Post, {
-        // This is so fucking stupid but we can't do otherwise
+    http_server.fn_handler("/connect-wg", Method::Get, {
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {
+            super::check_ip(&mut request)?;
+
+            let connection = request.connection();
+
+            // Hang until user authenticates their finger
+            if biometry::check_user().is_err() {
+                connection.initiate_response(401, Some("Bad Fingerprint"), &[("Content-Type", "text/html")])?;
+
+                return Ok::<(), Error>(());
+            }
+
             {
                 let mut locked = WG_LOCK.lock().unwrap();
                 if *locked {
                     log::warn!("Wireguard connection already in progress!");
-
-                    let connection = request.connection();
 
                     connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
 
@@ -35,24 +43,6 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
                 }
             }
 
-            super::check_ip(&mut request)?;
-
-            let mut body = Vec::new();
-            let mut buffer = [0u8; 128];
-
-            loop {
-                match request.read(&mut buffer) {
-                    Ok(0) => break,
-                    Ok(n) => body.extend_from_slice(&buffer[..n]),
-                    Err(e) => return Err(e.into()),
-                }
-            }
-
-            let wg_conf: WgConfig = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
-
-            WgConfig::set_config(Arc::clone(&nvs), wg_conf)?;
-
-            // Yeah..
             let nvs = Arc::clone(&nvs);
 
             thread::spawn(move || {
@@ -126,7 +116,9 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             let mut html = format!(
                 r###"
                     <div class=svg-status-text-container>
-                        <img id="{svg_status}-svg-wg" src="{svg_status}.svg">
+                        <div class="svg-status-img">
+                            <img id="{svg_status}-svg-wg" src="{svg_status}.svg">
+                        </div>
                         <div id="wg-status-text">{status}</div>
                     </div>
                 "###

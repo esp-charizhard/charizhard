@@ -201,7 +201,9 @@ pub fn set_routes(
             let mut html = format!(
                 r###"
                     <div class=svg-status-text-container>
-                        <img id="{svg_status}-svg-wifi" src="{svg_status}.svg">
+                        <div class="svg-status-img">
+                            <img id="{svg_status}-svg-wifi" src="{svg_status}.svg">
+                        </div>
                         <div id="wifi-status-text">{ssid}</div>
                     </div>
                 "###
