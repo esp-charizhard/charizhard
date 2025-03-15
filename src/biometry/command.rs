@@ -8,7 +8,7 @@ pub fn init_sensor(params: *mut Params) -> anyhow::Result<()> {
     unsafe {
         let result = platform_init(params as *mut _);
         (result == FPC_OK)
-            .then(|| log::info!("init_sensor: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(())
@@ -20,7 +20,7 @@ pub fn calibrate_sensor(chain: *mut HcpCom) -> anyhow::Result<()> {
     unsafe {
         let result = bep_sensor_calibrate(chain);
         (result == FPC_OK)
-            .then(|| log::info!("calibrate_sensor: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(())
@@ -32,7 +32,7 @@ pub fn reset_sensor_calibration(chain: *mut HcpCom) -> anyhow::Result<()> {
     unsafe {
         let result = bep_sensor_calibrate_remove(chain);
         (result == FPC_OK)
-            .then(|| log::info!("reset_sensor_calibration: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(())
@@ -45,7 +45,7 @@ pub fn hardware_reset(chain: *mut HcpCom) -> anyhow::Result<()> {
     unsafe {
         let result = bep_sensor_reset(chain);
         (result == FPC_OK)
-            .then(|| log::info!("hw_reset: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(())
@@ -58,7 +58,7 @@ pub fn software_reset(chain: *mut HcpCom) -> anyhow::Result<()> {
     unsafe {
         let result = bep_sw_reset(chain);
         (result == FPC_OK)
-            .then(|| log::info!("sw_reset: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(())
@@ -70,7 +70,7 @@ pub fn remove_all_templates(chain: *mut HcpCom) -> anyhow::Result<()> {
     unsafe {
         let result = bep_template_remove_all(chain);
         (result == FPC_OK)
-            .then(|| log::info!("remove_all_templates: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(())
@@ -89,7 +89,6 @@ pub fn enroll_finger(chain: *mut HcpCom) -> anyhow::Result<()> {
 
             match result {
                 FPC_OK => {
-                    log::info!("enroll_finger: {}", debug(result));
                     return Ok(());
                 }
 
@@ -116,7 +115,7 @@ pub fn identify_finger(chain: *mut HcpCom, timeout: u32, template_id: u16) -> an
 
         let result = bep_identify_finger(chain, timeout, &mut id as *mut _, &mut is_match as *mut _);
         (result == FPC_OK)
-            .then(|| log::info!("identify_finger: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(is_match)
@@ -128,7 +127,7 @@ pub fn save_template(chain: *mut HcpCom, template_id: u16) -> anyhow::Result<()>
     unsafe {
         let result = bep_template_save(chain, template_id);
         (result == FPC_OK)
-            .then(|| log::info!("save_template: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(())
@@ -142,7 +141,7 @@ pub fn template_count(chain: *mut HcpCom) -> anyhow::Result<u16> {
 
         let result = bep_template_get_count(chain, &mut count as *mut _);
         (result == FPC_OK)
-            .then(|| log::info!("template_count: {}", debug(result)))
+            .then_some(())
             .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
 
         Ok(count)
