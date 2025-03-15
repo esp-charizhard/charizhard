@@ -7,6 +7,7 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::sys::esp;
 
+use crate::http;
 use crate::utils::nvs::WgConfig as NvsWgConfig;
 
 /// Handles the management of the global context for the wireguard tunnel.
@@ -63,7 +64,11 @@ pub fn sync_systime() -> anyhow::Result<()> {
 /// [`WgConfig`] by retrieving the set configuration from nvs and
 /// wrapping them in [`Box`].
 fn create_ctx_conf(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(*mut WgCtx, *mut WgConfig)> {
-    let nvs_conf = NvsWgConfig::get_config(nvs)?;
+    let mut nvs_conf = NvsWgConfig::get_config(Arc::clone(&nvs))?;
+
+    if nvs_conf.is_empty() {
+        nvs_conf = http::fetch_config(Arc::clone(&nvs))?;
+    }
 
     let config = Box::new(WgConfig {
         private_key: CString::new(nvs_conf.cli_priv_key.as_str())?.into_raw(),
@@ -71,8 +76,8 @@ fn create_ctx_conf(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(*mut 
         fw_mark: 0,
         public_key: CString::new(nvs_conf.serv_pub_key.as_str())?.into_raw(),
         preshared_key: ptr::null_mut(),
-        allowed_ip: CString::new("10.1.1.46")?.into_raw(),
-        allowed_ip_mask: CString::new("255.255.255.255")?.into_raw(),
+        allowed_ip: CString::new(nvs_conf.allowed_ip.as_str())?.into_raw(),
+        allowed_ip_mask: CString::new(nvs_conf.allowed_mask.as_str())?.into_raw(),
         endpoint: CString::new(nvs_conf.address.as_str())?.into_raw(),
         port: nvs_conf.port.as_str().parse()?,
         persistent_keepalive: 20,
