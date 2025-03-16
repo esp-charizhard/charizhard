@@ -27,9 +27,15 @@ async function connectWg() {
         if (response.status === 401) {
             statusDiv.textContent = "Finger KO";
             statusDiv.style.color = 'red';
-        } else if (response.ok) {
-            statusDiv.textContent = "Finger OK";
-            statusDiv.style.color = 'green';
+        } else if (response.status === 412) {
+            statusDiv.textContent = "Wifi disconnected";
+            statusDiv.style.color = 'red';
+        } else if (response.status === 208) {
+            statusDiv.textContent = "Already connected.";
+            statusDiv.style.color = 'green'
+        } else if (response.status === 204) {
+            statusDiv.textContent = "Connecting..";
+            statusDiv.style.color = 'green'
         } else {
             statusDiv.textContent = "Failed to connect";
             statusDiv.style.color = 'orange';
