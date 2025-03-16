@@ -14,7 +14,11 @@ lazy_static::lazy_static!(
 );
 
 /// Sets the Wireguard related routes for the http server.
-pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
+pub fn set_routes(
+    http_server: &mut EspHttpServer<'static>,
+    nvs: Arc<Mutex<EspNvs<NvsDefault>>>,
+    wifi: Arc<Mutex<EspWifi<'static>>>,
+) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Get, {
         let nvs = Arc::clone(&nvs);
@@ -41,7 +45,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
                     return Ok::<(), Error>(());
                 }
             }
-            
+
             {
                 let mut locked = WG_LOCK.lock().unwrap();
                 if *locked {

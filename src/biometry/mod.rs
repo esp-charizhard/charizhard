@@ -38,11 +38,10 @@ mod functions {
         bep_uart_speed_set,
         bep_unique_id_get,
         bep_version,
-        platform_init,
         platform_deinit,
+        platform_init,
     };
 }
-
 
 mod results {
     pub use esp_idf_svc::sys::bmlite::{

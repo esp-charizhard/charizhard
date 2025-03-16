@@ -15,7 +15,8 @@ pub fn init_sensor(params: *mut Params) -> anyhow::Result<()> {
     }
 }
 
-/// Deinitializes the sensor. Calling any other function other than init_sensor after this will invariably result in UB.
+/// Deinitializes the sensor. Calling any other function other than init_sensor
+/// after this will invariably result in UB.
 pub fn deinit_sensor(params: *mut Params) -> anyhow::Result<()> {
     unsafe {
         let result = platform_deinit(params as *mut _);

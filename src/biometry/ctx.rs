@@ -1,9 +1,8 @@
 use core::ptr;
 use std::sync::{Arc, Mutex};
 
-use crate::biometry::commands::deinit_sensor;
-
 use super::{HcpCom, Params};
+use crate::biometry::commands::deinit_sensor;
 
 pub struct SensorCtx {
     pub params: *mut Params,

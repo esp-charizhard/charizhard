@@ -36,7 +36,7 @@ impl Certificate {
     const CERT_PRIVKEY: &'static str = "CERTPRIVKEY";
 
     pub fn is_empty(&self) -> bool {
-        self.cert.0.is_empty() || self.privkey.0.is_empty()
+        self.cert.0.chars().all(|c| c == '\0') || self.privkey.0.chars().all(|c| c == '\0')
     }
 
     /// Call to set the Certificate configuration in nvs.
@@ -93,12 +93,12 @@ impl WgConfig {
     const SERVER_PUB: &'static str = "PUBKEY";
 
     pub fn is_empty(&self) -> bool {
-        self.address.0.is_empty()
-            || self.port.0.is_empty()
-            || self.cli_priv_key.0.is_empty()
-            || self.serv_pub_key.0.is_empty()
-            || self.allowed_ip.0.is_empty()
-            || self.allowed_mask.0.is_empty()
+        self.address.0.chars().all(|c| c == '\0')
+            || self.port.0.chars().all(|c| c == '\0')
+            || self.cli_priv_key.0.chars().all(|c| c == '\0')
+            || self.serv_pub_key.0.chars().all(|c| c == '\0')
+            || self.allowed_ip.0.chars().all(|c| c == '\0')
+            || self.allowed_mask.0.chars().all(|c| c == '\0')
     }
 
     /// Call to set the Wireguard configuration in nvs.

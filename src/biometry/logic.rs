@@ -102,8 +102,7 @@ pub fn enroll_user() -> anyhow::Result<()> {
         software_reset(ctx.chain)?;
         enroll_finger(ctx.chain)?;
         save_template(ctx.chain, 1)?;
-    }
-    else {
+    } else {
         log::warn!("A user was already enrolled.");
     }
 
