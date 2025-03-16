@@ -41,7 +41,7 @@ impl Certificate {
 
     /// Call to set the Certificate configuration in nvs.
     pub fn set_config(&self, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
-        let mut nvs = nvs.lock().unwrap();
+        let nvs = nvs.lock().unwrap();
 
         nvs.set_str(Self::CERT, self.cert.clean_string().as_str())?;
         nvs.set_str(Self::CERT_PRIVKEY, self.privkey.clean_string().as_str())?;
@@ -103,7 +103,7 @@ impl WgConfig {
 
     /// Call to set the Wireguard configuration in nvs.
     pub fn set_config(&self, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
-        let mut nvs = nvs.lock().unwrap();
+        let nvs = nvs.lock().unwrap();
 
         nvs.set_str(Self::ADDR, self.address.clean_string().as_str())?;
         nvs.set_str(Self::PORT, self.port.clean_string().as_str())?;
@@ -161,7 +161,7 @@ impl WifiConfig {
 
     /// Call to set the wifi configuration in nvs.
     pub fn set_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, config: WifiConfig) -> anyhow::Result<()> {
-        let mut nvs = nvs.lock().unwrap();
+        let nvs = nvs.lock().unwrap();
 
         nvs.set_str(Self::STA_SSID, config.sta_ssid.clean_string().as_str())?;
         nvs.set_str(Self::STA_PASSWD, config.sta_passwd.clean_string().as_str())?;
