@@ -15,6 +15,18 @@ pub fn init_sensor(params: *mut Params) -> anyhow::Result<()> {
     }
 }
 
+/// Deinitializes the sensor. Calling any other function other than init_sensor after this will invariably result in UB.
+pub fn deinit_sensor(params: *mut Params) -> anyhow::Result<()> {
+    unsafe {
+        let result = platform_deinit(params as *mut _);
+        (result == FPC_OK)
+            .then_some(())
+            .ok_or_else(|| anyhow::anyhow!(debug(result)))?;
+
+        Ok(())
+    }
+}
+
 /// Calibrates the sensor. A reboot is required for this to take effect.
 pub fn calibrate_sensor(chain: *mut HcpCom) -> anyhow::Result<()> {
     unsafe {
@@ -89,6 +101,7 @@ pub fn enroll_finger(chain: *mut HcpCom) -> anyhow::Result<()> {
 
             match result {
                 FPC_OK => {
+                    log::info!("Enroll successful.");
                     return Ok(());
                 }
 

@@ -39,8 +39,10 @@ mod functions {
         bep_unique_id_get,
         bep_version,
         platform_init,
+        platform_deinit,
     };
 }
+
 
 mod results {
     pub use esp_idf_svc::sys::bmlite::{

@@ -1,6 +1,8 @@
 use core::ptr;
 use std::sync::{Arc, Mutex};
 
+use crate::biometry::commands::deinit_sensor;
+
 use super::{HcpCom, Params};
 
 pub struct SensorCtx {
@@ -22,6 +24,11 @@ impl SensorCtx {
     }
 
     pub fn set(&mut self, params: *mut Params, chain: *mut HcpCom) {
+        if self.is_set() {
+            log::error!("BM-Lite pointers were already initialized!");
+            return;
+        }
+
         log::warn!("Storing BM-Lite pointers!");
 
         self.params = params;
@@ -33,8 +40,15 @@ impl SensorCtx {
     }
 
     pub fn reset(&mut self) {
+        if !self.is_set() {
+            log::error!("BM-Lite pointers weren't initialized!");
+            return;
+        }
+
         unsafe {
             log::warn!("Resetting BM-Lite pointers!");
+
+            _ = deinit_sensor(self.params);
 
             _ = Box::from_raw(self.params);
             _ = Box::from_raw(self.chain);

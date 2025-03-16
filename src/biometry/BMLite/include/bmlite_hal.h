@@ -59,6 +59,12 @@ typedef enum {
 fpc_bep_result_t hal_board_init(void *params);
 
 /*
+* @brief Board deinitialization
+* @param[in] params  - pointer to additional parameters
+*/
+fpc_bep_result_t hal_board_deinit(void *params);
+
+/*
  * @brief Control BM-Lite Reset pin
  * @param[in] True  - Activate RESET
  *            False - Deactivate RESET
@@ -143,6 +149,5 @@ uint32_t hal_check_button_pressed(void);
  * @param[in] Status modifier
  */
 void hal_set_leds(platform_led_status_t status, uint16_t mode);
-
 
 #endif /* BMLITE_H */

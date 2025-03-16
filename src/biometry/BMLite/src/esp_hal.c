@@ -24,6 +24,35 @@
 
 static spi_device_handle_t spi_handle;
 
+fpc_bep_result_t hal_board_deinit(void *params)
+{
+    esp_err_t ret;
+
+    if (spi_handle) {
+        ret = spi_bus_remove_device(spi_handle);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to remove SPI device: %d", ret);
+            return FPC_BEP_RESULT_INTERNAL_ERROR;
+        }
+        spi_handle = NULL;
+    }
+
+    ret = spi_bus_free(BM_LITE_SPI_HOST);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to free SPI bus: %d", ret);
+        return FPC_BEP_RESULT_INTERNAL_ERROR;
+    }
+
+    gpio_reset_pin(BM_LITE_CS_N_PIN);
+    gpio_reset_pin(BM_LITE_MISO_PIN);
+    gpio_reset_pin(BM_LITE_MOSI_PIN);
+    gpio_reset_pin(BM_LITE_SPI_CLK_PIN);
+    gpio_reset_pin(BM_LITE_RST_PIN);
+    gpio_reset_pin(BM_LITE_IRQ_PIN);
+
+    return FPC_BEP_RESULT_OK;
+}
+
 fpc_bep_result_t hal_board_init(void *params)
 {
     console_initparams_t *p = (console_initparams_t *)params;
@@ -48,7 +77,7 @@ fpc_bep_result_t hal_board_init(void *params)
         .spics_io_num = BM_LITE_CS_N_PIN,
         .queue_size = 1,
     };
-
+    
     esp_err_t ret = spi_bus_initialize(BM_LITE_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
         return FPC_BEP_RESULT_INTERNAL_ERROR;

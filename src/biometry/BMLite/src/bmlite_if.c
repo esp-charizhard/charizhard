@@ -17,9 +17,12 @@
 #include "hcp_tiny.h"
 #include "bmlite_if.h"
 #include "bmlite_hal.h"
+#include "esp_log.h"
 #include <stdio.h>
 
 #include "bmlite_if_callbacks.h"
+
+#define TAG "bmlite_if"
 
 #define MAX_CAPTURE_ATTEMPTS 15
 #define MAX_SINGLE_CAPTURE_ATTEMPTS 3
@@ -76,7 +79,7 @@ fpc_bep_result_t bep_enroll_finger(HCP_comm_t *chain)
 
         bmlite_get_arg(chain, ARG_COUNT);
         samples_remaining = *(uint32_t *)chain->arg.data;
-//      DEBUG("Enroll samples remaining: %d\n", samples_remaining);
+        ESP_LOGI(TAG, "Enroll samples remaining: %lu", samples_remaining);
 
         /* Break enrolling if we can't collect enough correct images for enroll*/
         if (samples_remaining == 0U) {

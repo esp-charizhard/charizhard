@@ -40,6 +40,13 @@
 fpc_bep_result_t platform_init(void *params);
 
 /**
+ * @brief Deinitializes board
+ *
+ * @param[in] params  - pointer to additional parameters.
+ */
+fpc_bep_result_t platform_deinit(void *params);
+
+/**
  * @brief Does BM-Lite HW Reset
  *
  */

@@ -41,6 +41,16 @@ fpc_bep_result_t platform_init(void *params)
     return result;
 }
 
+fpc_bep_result_t platform_deinit(void *params)
+{
+    fpc_bep_result_t result;
+    result = hal_board_deinit(params);
+    if(result == FPC_BEP_RESULT_OK) {
+        platform_bmlite_reset();
+    }
+    return result;
+}
+
 void platform_bmlite_reset(void)
 {
     hal_bmlite_reset(true);

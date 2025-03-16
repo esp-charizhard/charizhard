@@ -37,7 +37,7 @@ fn init_config() -> anyhow::Result<(*mut Params, *mut HcpCom)> {
 }
 
 /// Initializes the sensor.
-pub fn init(init_spi: bool) -> anyhow::Result<()> {
+pub fn init() -> anyhow::Result<()> {
     log::info!("Initializing Sensor..");
 
     let mut ctx = SENSOR_CTX.lock().unwrap();
@@ -50,9 +50,7 @@ pub fn init(init_spi: bool) -> anyhow::Result<()> {
 
     // This needs to be called before any other bmlite interface function. Failure
     // to do this results will invariably result in UB.
-    if init_spi {
-        init_sensor(params)?;
-    }
+    init_sensor(params)?;
 
     ctx.set(params, chain);
 
@@ -92,7 +90,7 @@ pub fn enroll_user() -> anyhow::Result<()> {
 
         // init needs the lock
         drop(ctx);
-        init(false)?;
+        init()?;
 
         // retake
         ctx = SENSOR_CTX.lock().unwrap();
@@ -104,6 +102,9 @@ pub fn enroll_user() -> anyhow::Result<()> {
         software_reset(ctx.chain)?;
         enroll_finger(ctx.chain)?;
         save_template(ctx.chain, 1)?;
+    }
+    else {
+        log::warn!("A user was already enrolled.");
     }
 
     Ok(())
