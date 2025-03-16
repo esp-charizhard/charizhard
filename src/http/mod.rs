@@ -9,11 +9,10 @@ use esp_idf_svc::wifi::EspWifi;
 use super::net::ETH_GATEWAY;
 
 mod admin;
-mod cert;
 mod user;
 
+pub use admin::fetch_config;
 use admin::{admin_html, set_config_routes};
-pub use cert::fetch_config;
 use user::{index_html, set_assets_routes, set_wg_routes, set_wifi_routes};
 
 /// Checks that the source ip of the request is [`ETH_GATEWAY`] + 1. This
