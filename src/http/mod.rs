@@ -45,7 +45,7 @@ pub fn start(
     })?;
 
     set_assets_routes(&mut http_server)?;
-    set_wg_routes(&mut http_server, Arc::clone(&nvs))?;
+    set_wg_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
     set_wifi_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
     set_config_routes(&mut http_server, Arc::clone(&nvs))?;
 

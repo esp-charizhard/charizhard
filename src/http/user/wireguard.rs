@@ -4,6 +4,7 @@ use std::thread;
 use anyhow::Error;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
+use esp_idf_svc::wifi::EspWifi;
 
 use crate::utils::nvs::WgConfig;
 use crate::{biometry, wireguard as wg};
@@ -13,10 +14,11 @@ lazy_static::lazy_static!(
 );
 
 /// Sets the Wireguard related routes for the http server.
-pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     // Handler to connect to a wireguard peer
     http_server.fn_handler("/connect-wg", Method::Get, {
         let nvs = Arc::clone(&nvs);
+        let wifi = Arc::clone(&wifi);
 
         move |mut request| {
             super::check_ip(&mut request)?;
@@ -31,11 +33,21 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             }
 
             {
+                let wifi = wifi.lock().unwrap();
+                if !wifi.is_connected()? {
+                    log::warn!("Cannot initiate wireguard tunnel without wifi connection being established.");
+                    connection.initiate_response(412, Some("Wifi Disconected"), &[("Content-Type", "text/html")])?;
+
+                    return Ok::<(), Error>(());
+                }
+            }
+            
+            {
                 let mut locked = WG_LOCK.lock().unwrap();
                 if *locked {
                     log::warn!("Wireguard connection already in progress!");
 
-                    connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+                    connection.initiate_response(208, Some("Already Connected"), &[("Content-Type", "text/html")])?;
 
                     return Ok::<(), Error>(());
                 } else {
