@@ -1,11 +1,11 @@
 use core::ptr;
 use std::sync::{Arc, Mutex};
 
-use super::{HcpCom, Params};
-use crate::biometry::commands::deinit_sensor;
+use super::{HcpCom, Params, PinsConfig};
 
 pub struct SensorCtx {
     pub params: *mut Params,
+    pub pins: *mut PinsConfig,
     pub chain: *mut HcpCom,
 }
 
@@ -18,11 +18,12 @@ impl SensorCtx {
     fn new() -> Self {
         SensorCtx {
             params: ptr::null_mut(),
+            pins: ptr::null_mut(),
             chain: ptr::null_mut(),
         }
     }
 
-    pub fn set(&mut self, params: *mut Params, chain: *mut HcpCom) {
+    pub fn set(&mut self, params: *mut Params, pins: *mut PinsConfig, chain: *mut HcpCom) {
         if self.is_set() {
             log::error!("BM-Lite pointers were already initialized!");
             return;
@@ -31,11 +32,12 @@ impl SensorCtx {
         log::warn!("Storing BM-Lite pointers!");
 
         self.params = params;
+        self.pins = pins;
         self.chain = chain;
     }
 
     pub fn is_set(&self) -> bool {
-        !(self.params.is_null() || self.chain.is_null())
+        !(self.params.is_null() || self.pins.is_null() || self.chain.is_null())
     }
 
     pub fn reset(&mut self) {
@@ -47,12 +49,12 @@ impl SensorCtx {
         unsafe {
             log::warn!("Resetting BM-Lite pointers!");
 
-            _ = deinit_sensor(self.params);
-
             _ = Box::from_raw(self.params);
+            _ = Box::from_raw(self.pins);
             _ = Box::from_raw(self.chain);
 
             self.params = ptr::null_mut();
+            self.pins = ptr::null_mut();
             self.chain = ptr::null_mut();
         }
     }

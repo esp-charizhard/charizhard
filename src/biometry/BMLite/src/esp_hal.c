@@ -12,21 +12,14 @@
 
 #define TAG "esp_hal"
 
-#define BM_LITE_SPI_HOST    SPI2_HOST
-
-// PINOUT
-#define BM_LITE_CS_N_PIN GPIO_NUM_2 //io
-#define BM_LITE_MISO_PIN GPIO_NUM_35 //i
-#define BM_LITE_RST_PIN   GPIO_NUM_4 //io
-#define BM_LITE_MOSI_PIN GPIO_NUM_12 //io 
-#define BM_LITE_IRQ_PIN   GPIO_NUM_14 //io
-#define BM_LITE_SPI_CLK_PIN GPIO_NUM_15 //io
-
 static spi_device_handle_t spi_handle;
+static pin_config_t *pins;
 
 fpc_bep_result_t hal_board_deinit(void *params)
 {
     esp_err_t ret;
+
+    console_initparams_t *p = (console_initparams_t *)params;
 
     if (spi_handle) {
         ret = spi_bus_remove_device(spi_handle);
@@ -37,25 +30,41 @@ fpc_bep_result_t hal_board_deinit(void *params)
         spi_handle = NULL;
     }
 
-    ret = spi_bus_free(BM_LITE_SPI_HOST);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to free SPI bus: %d", ret);
-        return FPC_BEP_RESULT_INTERNAL_ERROR;
+    if (p && p->pins) {
+        ret = spi_bus_free(p->pins->spi_host);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to free SPI bus: %d", ret);
+            return FPC_BEP_RESULT_INTERNAL_ERROR;
+        }
+
+        platform_bmlite_reset();
+
+        gpio_reset_pin(p->pins->cs_n_pin);
+        gpio_reset_pin(p->pins->miso_pin);
+        gpio_reset_pin(p->pins->mosi_pin);
+        gpio_reset_pin(p->pins->spi_clk_pin);
+        gpio_reset_pin(p->pins->rst_pin);
+        gpio_reset_pin(p->pins->irq_pin);
+        
+        p->pins = NULL;
     }
 
-    gpio_reset_pin(BM_LITE_CS_N_PIN);
-    gpio_reset_pin(BM_LITE_MISO_PIN);
-    gpio_reset_pin(BM_LITE_MOSI_PIN);
-    gpio_reset_pin(BM_LITE_SPI_CLK_PIN);
-    gpio_reset_pin(BM_LITE_RST_PIN);
-    gpio_reset_pin(BM_LITE_IRQ_PIN);
+    pins = NULL;
 
     return FPC_BEP_RESULT_OK;
 }
 
 fpc_bep_result_t hal_board_init(void *params)
 {
+    
     console_initparams_t *p = (console_initparams_t *)params;
+
+    if (!p || !p->pins) {
+        ESP_LOGE(TAG, "Invalid init params");
+        return FPC_BEP_RESULT_INTERNAL_ERROR;
+    }
+
+    pins = p->pins;
     
     if (p->iface == COM_INTERFACE) {
         ESP_LOGE(TAG, "UART Interface not supported!");
@@ -63,9 +72,9 @@ fpc_bep_result_t hal_board_init(void *params)
     }
 
     spi_bus_config_t buscfg = {
-        .miso_io_num = BM_LITE_MISO_PIN,
-        .mosi_io_num = BM_LITE_MOSI_PIN,
-        .sclk_io_num = BM_LITE_SPI_CLK_PIN,
+        .miso_io_num = pins->miso_pin,
+        .mosi_io_num = pins->mosi_pin,
+        .sclk_io_num = pins->spi_clk_pin,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = 2048,
@@ -74,23 +83,27 @@ fpc_bep_result_t hal_board_init(void *params)
     spi_device_interface_config_t devcfg = {
         .mode = 0,
         .clock_speed_hz = p->baudrate,
-        .spics_io_num = BM_LITE_CS_N_PIN,
+        .spics_io_num = pins->cs_n_pin,
         .queue_size = 1,
     };
     
-    esp_err_t ret = spi_bus_initialize(BM_LITE_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    esp_err_t ret = spi_bus_initialize(pins->spi_host, &buscfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
+        spi_bus_free(pins->spi_host);
+        pins = NULL;
         return FPC_BEP_RESULT_INTERNAL_ERROR;
     }
 
-    ret = spi_bus_add_device(BM_LITE_SPI_HOST, &devcfg, &spi_handle);
+    ret = spi_bus_add_device(pins->spi_host, &devcfg, &spi_handle);
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to add SPI device");
+        spi_bus_free(pins->spi_host);
         return FPC_BEP_RESULT_INTERNAL_ERROR;
     }
 
     // Init RST Pin
     gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << BM_LITE_RST_PIN),
+        .pin_bit_mask = (1ULL << pins->rst_pin),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -103,7 +116,7 @@ fpc_bep_result_t hal_board_init(void *params)
     }
 
     // Init IRQ Pin
-    io_conf.pin_bit_mask = (1ULL << BM_LITE_IRQ_PIN);
+    io_conf.pin_bit_mask = (1ULL << pins->irq_pin);
     io_conf.mode = GPIO_MODE_INPUT;
     
     ret = gpio_config(&io_conf);
@@ -118,14 +131,15 @@ fpc_bep_result_t hal_board_init(void *params)
     return FPC_BEP_RESULT_OK;
 }
 
+// THIS IS NULL
 void hal_bmlite_reset(bool state)
 {
-    gpio_set_level(BM_LITE_RST_PIN, state ? 0 : 1);  // Active Low
+    gpio_set_level(pins->rst_pin, state ? 0 : 1);  // Active Low
 }
 
 bool hal_bmlite_get_status(void)
 {
-    return gpio_get_level(BM_LITE_IRQ_PIN) == 1;  // Active High
+    return gpio_get_level(pins->irq_pin) == 1;  // Active High
 }
 
 fpc_bep_result_t hal_bmlite_spi_write_read(uint8_t *write, uint8_t *read, size_t size, bool leave_cs_asserted)

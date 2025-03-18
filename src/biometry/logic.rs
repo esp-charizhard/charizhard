@@ -1,15 +1,25 @@
 use core::ptr;
 
-use esp_idf_svc::sys::bmlite::{interface_t_SPI_INTERFACE, MTU};
+use esp_idf_svc::sys::bmlite::{
+    gpio_num_t_GPIO_NUM_12,
+    gpio_num_t_GPIO_NUM_14,
+    gpio_num_t_GPIO_NUM_15,
+    gpio_num_t_GPIO_NUM_2,
+    gpio_num_t_GPIO_NUM_35,
+    gpio_num_t_GPIO_NUM_4,
+    interface_t_SPI_INTERFACE,
+    spi_host_device_t_SPI2_HOST,
+    MTU,
+};
 
 use super::commands::*;
 use super::ctx::SENSOR_CTX;
-use super::{HcpArg, HcpCom, Params};
+use super::{HcpArg, HcpCom, Params, PinsConfig};
 
 /// Initializes an SPI configurationa long with an HcpCom struct to communicate
 /// with the BM-Lite. This should always be called once and only once at th
 /// ebeginning of the
-fn init_config() -> anyhow::Result<(*mut Params, *mut HcpCom)> {
+fn init_config() -> anyhow::Result<(*mut Params, *mut PinsConfig, *mut HcpCom)> {
     let pkt_buffer = Box::into_raw(Box::new([0u8; 1024 * 5])) as *mut u8;
     let txrx_buffer = Box::into_raw(Box::new([0u8; MTU as usize])) as *mut u8;
 
@@ -25,15 +35,26 @@ fn init_config() -> anyhow::Result<(*mut Params, *mut HcpCom)> {
         bep_result: 0,
     }));
 
+    let pins = Box::into_raw(Box::new(PinsConfig {
+        spi_host: spi_host_device_t_SPI2_HOST,
+        cs_n_pin: gpio_num_t_GPIO_NUM_2,
+        miso_pin: gpio_num_t_GPIO_NUM_35,
+        rst_pin: gpio_num_t_GPIO_NUM_4,
+        mosi_pin: gpio_num_t_GPIO_NUM_12,
+        irq_pin: gpio_num_t_GPIO_NUM_14,
+        spi_clk_pin: gpio_num_t_GPIO_NUM_15,
+    }));
+
     let params = Box::into_raw(Box::new(Params {
         iface: interface_t_SPI_INTERFACE,
         port: ptr::null_mut(),
         baudrate: 5_000_000,
         timeout: 3000,
+        pins,
         hcp_comm: chain,
     }));
 
-    Ok((params, chain))
+    Ok((params, pins, chain))
 }
 
 /// Initializes the sensor.
@@ -46,13 +67,13 @@ pub fn init() -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("SENSOR_CTX is already set!"));
     }
 
-    let (params, chain) = init_config()?;
+    let (params, pins_config, chain) = init_config()?;
 
     // This needs to be called before any other bmlite interface function. Failure
     // to do this results will invariably result in UB.
     init_sensor(params)?;
 
-    ctx.set(params, chain);
+    ctx.set(params, pins_config, chain);
 
     Ok(())
 }
@@ -72,6 +93,7 @@ pub fn reset() -> anyhow::Result<()> {
     reset_sensor_calibration(ctx.chain)?;
     remove_all_templates(ctx.chain)?;
     hardware_reset(ctx.chain)?;
+    deinit_sensor(ctx.params)?;
 
     ctx.reset();
 

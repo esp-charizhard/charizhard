@@ -50,6 +50,10 @@ typedef enum {
     BMLITE_LED_STATUS_ERROR,
 } platform_led_status_t;
 
+/*
+* @brief Board deinitialization
+*/
+fpc_bep_result_t hal_board_deinit(void *params);
 
 /*
  * @brief Board initialization
@@ -57,12 +61,6 @@ typedef enum {
  */
 
 fpc_bep_result_t hal_board_init(void *params);
-
-/*
-* @brief Board deinitialization
-* @param[in] params  - pointer to additional parameters
-*/
-fpc_bep_result_t hal_board_deinit(void *params);
 
 /*
  * @brief Control BM-Lite Reset pin
