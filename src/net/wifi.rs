@@ -52,9 +52,9 @@ pub fn wifi_set_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<EspW
     let config = WifiConfig::get_config(Arc::clone(&nvs))?;
 
     let wifi_config = Configuration::Client(ClientConfiguration {
-        ssid: config.sta_ssid.0,
-        password: config.sta_passwd.0,
-        auth_method: config.sta_auth.as_str().try_into()?,
+        ssid: config.ssid.0,
+        password: config.password.0,
+        auth_method: config.auth_method.as_str().try_into()?,
         ..Default::default()
     });
 

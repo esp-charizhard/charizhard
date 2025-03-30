@@ -30,6 +30,9 @@ fn main() -> anyhow::Result<()> {
 
     biometry::init()?;
 
+    // TODO CHECKING USER AUTHENTICATION SHOULD BE DONE HERE
+    // TODO IF BIOMETRY HAS TEMPLATES, CHECK FINGERPRINT, OTHERWISE CONTINUE.
+
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
     let eth_netif = net::eth_start(peripherals.pins, peripherals.mac, sysloop.clone())?;

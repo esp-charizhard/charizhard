@@ -152,7 +152,6 @@ pub fn admin_html() -> anyhow::Result<String> {
 
                             <button type="submit">Save Config</button>
                         </form>
-                        <button onclick="enrollUser()">Enroll User</button>
                         <button onclick="resetConfig()">Factory Reset</button>
                         
                     </div>

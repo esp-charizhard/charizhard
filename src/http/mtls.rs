@@ -10,7 +10,7 @@ const CA_CERT: &str = include_str!("../certs/letsencrypt.pem");
 
 const HOSTNAME: &str = "charizhard.duckdns.org";
 
-pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<WgConfig> {
+pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str) -> anyhow::Result<()> {
     let mut tls = EspTls::new()?;
 
     // need to null-terminate the cert
@@ -32,7 +32,15 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<WgCon
         ..Default::default()
     })?;
 
-    let request = format!("GET /get-config HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n", HOSTNAME);
+    let body_data = serde_urlencoded::to_string([("email", email), ("otp", otp)])?;
+
+    let request = format!(
+        "POST /get-config HTTP/1.1\r\nHost: {}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: \
+         {}\r\nConnection: close\r\n\r\n{}",
+        HOSTNAME,
+        body_data.len(),
+        body_data
+    );
 
     tls.write_all(request.as_bytes())?;
 
@@ -49,11 +57,14 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<WgCon
 
     let response = String::from_utf8(body)?;
 
-    // split headers and body
+    // Split headers and body
     let parts: Vec<&str> = response.split("\r\n\r\n").collect();
     let contents = if parts.len() > 1 { parts[1] } else { "" };
 
     let wg_conf: WgConfig = serde_urlencoded::from_str(contents)?;
 
-    Ok(wg_conf)
+    // Write newly fetched config to nvs.
+    wg_conf.set_config(Arc::clone(&nvs))?;
+
+    Ok(())
 }

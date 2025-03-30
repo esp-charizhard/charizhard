@@ -26,7 +26,7 @@ pub fn set_routes(
 
             let connection = request.connection();
 
-            connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+            connection.initiate_response(204, None, &[("Content-Type", "text/html")])?;
 
             Ok::<(), Error>(())
         }
@@ -64,7 +64,7 @@ pub fn set_routes(
 
             let connection = request.connection();
 
-            connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
+            connection.initiate_response(204, None, &[("Content-Type", "text/html")])?;
 
             Ok::<(), Error>(())
         }
@@ -212,7 +212,7 @@ pub fn set_routes(
             if is_connected {
                 html.push_str(
                     r###"
-                        <button id="disconnect-wifi-button" onclick="disconnectWifi()">Disconnect</button>
+                        <button id="disconnect-wifi-button" onclick="disconnect()">Disconnect</button>
                     "###,
                 );
             }
