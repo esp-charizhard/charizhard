@@ -7,3 +7,8 @@
 **/*.bin
 **/*.exe
 **/sdkconfig.debug
+
+# Certificates
+**/*.crt
+**/*.key
+**/*.pem

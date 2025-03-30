@@ -6,7 +6,8 @@ use esp_idf_svc::tls::{self, EspTls, X509};
 
 use crate::utils::nvs::{Certificate, WgConfig};
 
-const CA_CERT: &str = include_str!("ca_cert.pem");
+const CA_CERT: &str = include_str!("../certs/letsencrypt.pem");
+
 const HOSTNAME: &str = "charizhard.duckdns.org";
 
 pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<WgConfig> {

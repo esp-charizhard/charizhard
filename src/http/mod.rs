@@ -8,12 +8,11 @@ use esp_idf_svc::wifi::EspWifi;
 
 use super::net::ETH_GATEWAY;
 
-mod admin;
-mod user;
+mod html;
+mod routes;
 
-pub use admin::fetch_config;
-use admin::{admin_html, set_config_routes};
-use user::{index_html, set_assets_routes, set_wg_routes, set_wifi_routes};
+use html::{index_html, otp_html, status_html, admin_html};
+use routes::{set_admin_routes, set_static_routes, set_wg_routes, set_wifi_routes};
 
 /// Checks that the source ip of the request is [`ETH_GATEWAY`] + 1. This
 /// function should be called at the beginning of every call to `fn_handler` to
@@ -43,10 +42,10 @@ pub fn start(
         ..Default::default()
     })?;
 
-    set_assets_routes(&mut http_server)?;
+    set_static_routes(&mut http_server)?;
     set_wg_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
     set_wifi_routes(&mut http_server, Arc::clone(&nvs), Arc::clone(&wifi))?;
-    set_config_routes(&mut http_server, Arc::clone(&nvs))?;
+    set_admin_routes(&mut http_server, Arc::clone(&nvs))?;
 
     // Handler to get the main config page
     http_server.fn_handler("/", Method::Get, {
@@ -65,6 +64,41 @@ pub fn start(
         }
     })?;
 
+    // Handler to get the otp verification page
+    http_server.fn_handler("/otp", Method::Get, {
+        move |mut request| {
+            self::check_ip(&mut request)?;
+
+            let connection = request.connection();
+
+            let html = otp_html()?;
+
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+
+            connection.write(html.as_bytes())?;
+
+            Ok::<(), Error>(())
+        }
+    })?;
+
+    // Handler to get the wifi / wireguard status page
+    http_server.fn_handler("/status", Method::Get, {
+        move |mut request| {
+            self::check_ip(&mut request)?;
+
+            let connection = request.connection();
+
+            let html = status_html()?;
+
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+
+            connection.write(html.as_bytes())?;
+
+            Ok::<(), Error>(())
+        }
+    })?;
+
+    // Handler to get the admin config page
     http_server.fn_handler("/admin", Method::Get, {
         move |mut request| {
             self::check_ip(&mut request)?;

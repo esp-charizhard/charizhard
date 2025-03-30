@@ -47,21 +47,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
         }
     })?;
 
-    http_server.fn_handler("/enroll-user", Method::Get, {
-        move |mut request| {
-            super::check_ip(&mut request)?;
-
-            let connection = request.connection();
-
-            biometry::enroll_user()?;
-
-            connection.initiate_response(204, Some("OK"), &[("Content-Type", "text/html")])?;
-
-            Ok::<(), Error>(())
-        }
-    })?;
-
-    http_server.fn_handler("/set-cert", Method::Post, {
+    http_server.fn_handler("/set-config", Method::Post, {
         let nvs = Arc::clone(&nvs);
 
         move |mut request| {

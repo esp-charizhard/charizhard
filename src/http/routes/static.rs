@@ -3,6 +3,62 @@ use esp_idf_svc::http::server::{EspHttpServer, Method};
 
 /// Sets the static routes for the http server.
 pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()> {
+    http_server.fn_handler("/status.js", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/status/status.js");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
+    http_server.fn_handler("/status.css", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/status/status.css");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/css")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
+    http_server.fn_handler("/otp.js", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/otp/otp.js");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
+    http_server.fn_handler("/otp.css", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/otp/otp.css");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/css")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
     http_server.fn_handler("/admin.js", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 

@@ -7,8 +7,8 @@ use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::sys::esp;
 
-use crate::http;
 use crate::utils::nvs::WgConfig as NvsWgConfig;
+mod mtls;
 
 /// Handles the management of the global context for the wireguard tunnel.
 pub mod ctx;
@@ -67,7 +67,7 @@ fn create_ctx_conf(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(*mut 
     let mut nvs_conf = NvsWgConfig::get_config(Arc::clone(&nvs))?;
 
     if nvs_conf.is_empty() {
-        nvs_conf = http::fetch_config(Arc::clone(&nvs))?;
+        nvs_conf = mtls::fetch_config(Arc::clone(&nvs))?;
     }
 
     let config = Box::new(WgConfig {
