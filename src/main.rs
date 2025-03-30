@@ -30,8 +30,9 @@ fn main() -> anyhow::Result<()> {
 
     biometry::init()?;
 
-    // TODO CHECKING USER AUTHENTICATION SHOULD BE DONE HERE
-    // TODO IF BIOMETRY HAS TEMPLATES, CHECK FINGERPRINT, OTHERWISE CONTINUE.
+    if biometry::is_user_enrolled()? {
+        biometry::check_user()?;
+    }
 
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 

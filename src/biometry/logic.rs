@@ -131,6 +131,19 @@ pub fn enroll_user() -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn is_user_enrolled() -> anyhow::Result<bool> {
+    log::info!("Checking if a user is enrolled..");
+    
+    let ctx = SENSOR_CTX.lock().unwrap();
+
+    if !ctx.is_set() {
+        log::warn!("SENSOR_CTX is not set! Cannot check non-existent.");
+        return Err(anyhow::anyhow!("SENSOR_CTX is not set!"));
+    }
+
+    Ok(template_count(ctx.chain)? == 1)
+}
+
 /// Checks whether a finger is recognized.
 /// Care should be taken to call this function AFTER a finger has already been
 /// enrolled. Failure to do this will invariably result in UB.
