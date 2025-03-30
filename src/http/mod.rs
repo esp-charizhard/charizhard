@@ -8,6 +8,7 @@ use esp_idf_svc::wifi::EspWifi;
 use serde::Deserialize;
 
 use super::net::ETH_GATEWAY;
+use crate::biometry;
 use crate::utils::nvs::WgConfig;
 
 mod html;
@@ -165,7 +166,12 @@ pub fn start(
             let connection = request.connection();
 
             match mtls::fetch_config(Arc::clone(&nvs), &otp_request.email, &otp_request.otp) {
-                Ok(_) => connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?,
+                Ok(_) => {
+                    // Now that we authenticated the user, we should force them to enroll their finger before they can proceed
+                    biometry::enroll_user()?;
+
+                    connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?
+                },
                 Err(_) => connection.initiate_response(401, Some("KO"), &[("Content-Type", "text/html")])?,
             }
 
