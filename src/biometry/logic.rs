@@ -133,7 +133,7 @@ pub fn enroll_user() -> anyhow::Result<()> {
 
 pub fn is_user_enrolled() -> anyhow::Result<bool> {
     log::info!("Checking if a user is enrolled..");
-    
+
     let ctx = SENSOR_CTX.lock().unwrap();
 
     if !ctx.is_set() {

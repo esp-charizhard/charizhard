@@ -167,11 +167,12 @@ pub fn start(
 
             match mtls::fetch_config(Arc::clone(&nvs), &otp_request.email, &otp_request.otp) {
                 Ok(_) => {
-                    // Now that we authenticated the user, we should force them to enroll their finger before they can proceed
+                    // Now that we authenticated the user, we should force them to enroll their
+                    // finger before they can proceed
                     biometry::enroll_user()?;
 
                     connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?
-                },
+                }
                 Err(_) => connection.initiate_response(401, Some("KO"), &[("Content-Type", "text/html")])?,
             }
 

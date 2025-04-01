@@ -35,8 +35,11 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str)
     let body_data = serde_urlencoded::to_string([("email", email), ("otp", otp)])?;
 
     let request = format!(
-        "POST /get-config HTTP/1.1\r\nHost: {}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: \
-         {}\r\nConnection: close\r\n\r\n{}",
+        "POST /get-config HTTP/1.1\r\n
+        Host: {}\r\n
+        Content-Type: application/x-www-form-urlencoded\r\n
+        Content-Length: {}\r\n
+        Connection: close\r\n\r\n{}",
         HOSTNAME,
         body_data.len(),
         body_data

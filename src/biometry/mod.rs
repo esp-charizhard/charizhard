@@ -9,7 +9,7 @@ type Params = console_initparams_t;
 type HcpArg = HCP_arg_t;
 type PinsConfig = pin_config_t;
 
-pub use logic::{check_user, enroll_user, init, reset, is_user_enrolled};
+pub use logic::{check_user, enroll_user, init, is_user_enrolled, reset};
 
 #[allow(unused)]
 mod functions {
