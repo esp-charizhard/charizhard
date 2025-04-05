@@ -65,6 +65,8 @@ pub fn wifi_set_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, wifi: Arc<Mutex<EspW
     Ok(())
 }
 
+const MAX_CONNECTION_CHECKS: u32 = 20;
+
 /// Connects the WiFi network interface to the configured access point.
 /// Care should be taken to always call [`EspWifi::set_configuration`] before
 /// this function.
@@ -84,6 +86,21 @@ pub fn wifi_connect(wifi: Arc<Mutex<EspWifi<'static>>>) -> anyhow::Result<()> {
     }
 
     wifi.connect()?;
+
+    for retries in 0..=MAX_CONNECTION_CHECKS {
+        if wifi.is_connected()? {
+            log::info!("Wifi connection established.");
+            break;
+        }
+
+        log::info!("Waiting for wifi connection...");
+        std::thread::park_timeout(std::time::Duration::from_millis(250));
+
+        if retries == MAX_CONNECTION_CHECKS {
+            log::error!("Failed to connect to wifi! Incorrect Credentials?");
+            return Err(anyhow::anyhow!("Failed to connect to wifi! Incorrect Credentials?"));
+        }
+    }
 
     Ok(())
 }

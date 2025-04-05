@@ -20,13 +20,23 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str)
         return Err(anyhow::anyhow!("No certificate to request wireguard configuration with!"));
     }
 
+    log::info!("Initializing mtls..");
+
     tls.connect(HOSTNAME, 443, &tls::Config {
         common_name: Some(HOSTNAME),
         ca_cert: Some(X509::pem(&CString::new(CA_CERT.as_bytes())?)),
         client_cert: Some(X509::pem(&CString::new(cert.cert.as_bytes())?)),
         client_key: Some(X509::pem(&CString::new(cert.privkey.as_bytes())?)),
+        client_key_password: None,
         alpn_protos: Some(&["http/1.1"]),
-        ..Default::default()
+        non_block: false,
+        use_secure_element: false,
+        timeout_ms: 4000,
+        use_global_ca_store: false,
+        skip_common_name: false,
+        keep_alive_cfg: None,
+        psk_hint_key: None,
+        is_plain_tcp: false,
     })?;
 
     let request = format!(

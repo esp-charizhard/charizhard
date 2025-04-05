@@ -27,12 +27,25 @@ pub struct Certificate {
     #[serde(rename = "cert")]
     pub cert: HeaplessString<2048>,
     #[serde(rename = "certprivkey")]
-    pub privkey: HeaplessString<256>,
+    pub privkey: HeaplessString<2048>,
 }
 
 impl Certificate {
     const CERT: &'static str = "CERT";
     const CERT_PRIVKEY: &'static str = "CERTPRIVKEY";
+
+    fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<HeaplessString<N>> {
+        let mut buf = [0u8; N];
+    
+        nvs.get_str(key, &mut buf)?;
+    
+        let raw_value = core::str::from_utf8(&buf).unwrap_or("");
+    
+        let mut value = HeaplessString::<N>::new();
+        value.push_str(raw_value)?;
+    
+        Ok(value)
+    }
 
     pub fn is_empty(&self) -> bool {
         self.cert.is_empty() || self.privkey.is_empty()
@@ -42,8 +55,8 @@ impl Certificate {
     pub fn set_config(&self, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
         let nvs = nvs.lock().unwrap();
 
-        nvs.set_str(Self::CERT, self.cert.clean_string().as_str())?;
-        nvs.set_str(Self::CERT_PRIVKEY, self.privkey.clean_string().as_str())?;
+        nvs.set_str(Self::CERT, self.cert.as_str())?;
+        nvs.set_str(Self::CERT_PRIVKEY, self.privkey.as_str())?;
 
         Ok(())
     }
@@ -53,9 +66,9 @@ impl Certificate {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            cert: get_key::<2048>(&nvs, Self::CERT).unwrap_or_else(|_| HeaplessString::new()),
+            cert: Certificate::get_key::<2048>(&nvs, Self::CERT).unwrap_or_else(|_| HeaplessString::new()),
 
-            privkey: get_key::<256>(&nvs, Self::CERT_PRIVKEY).unwrap_or_else(|_| HeaplessString::new()),
+            privkey: Certificate::get_key::<2048>(&nvs, Self::CERT_PRIVKEY).unwrap_or_else(|_| HeaplessString::new()),
         })
     }
 }

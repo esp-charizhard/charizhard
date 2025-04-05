@@ -12,15 +12,6 @@ async function connectWifi(event) {
 	const form = event.target.closest("form");
 	const passwordInput = form.querySelector('input[type="password"]');
 
-	if (!passwordInput) {
-		form.submit();
-		if (isFirstBoot()) {
-			window.location.href = "/otp";
-		} else {
-			window.location.href = "/status";
-		}
-	}
-
 	const wifiContainer = form.closest(".wifi");
 	const errorDiv = wifiContainer.querySelector(".error");
 
@@ -50,9 +41,13 @@ async function connectWifi(event) {
 				window.location.href = "/status";
 			}
 		}
+		else {
+			errorDiv.textContent = "Invalid password.";
+			errorDiv.style.color = "red";
+		}
 	} catch {
 		console.error("Error connecting to wifi:", err);
-		errorDiv.textContent = "Error";
+		errorDiv.textContent = "Error connecting to wifi.";
 		errorDiv.style.color = "red";
 	}
 }

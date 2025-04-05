@@ -81,3 +81,7 @@ button:active {
 	transform: translateY(0);
 	transition: opacity 0.3s, transform 0.3s;
 }
+
+.error {
+	text-align: center;
+}

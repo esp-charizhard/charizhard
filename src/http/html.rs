@@ -3,7 +3,7 @@ use base64::Engine;
 
 /// Stores the data for the http server's favicon as a byte slice to be included
 /// in rendering.
-const FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
+static FAVICON_DATA: &[u8] = include_bytes!("./static/assets/favicon.ico");
 
 /// Gives the html for the "/" handler.
 pub fn index_html() -> anyhow::Result<String> {
@@ -140,11 +140,11 @@ pub fn admin_html() -> anyhow::Result<String> {
                         
                         <form id="config" method="post" action="/set-config">
                             <label for="cert">Certificate</label>
-                            <input type="text" id="cert" name="cert" value="" required>
+                            <textarea id="cert" name="cert" required></textarea>
                             <div class="error" id="cert-error"></div>
 
                             <label for="certprivkey">Private Key</label>
-                            <input type="text" id="certprivkey" name="certprivkey" value="" required>
+                            <textarea id="certprivkey" name="certprivkey" required></textarea>
                             <div class="error" id="certprivkey-error"></div>
 
                             <button type="submit">Save Config</button>

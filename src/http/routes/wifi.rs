@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex};
-use std::thread;
 
 use anyhow::Error;
 use esp_idf_svc::http::server::{EspHttpServer, Method};
@@ -57,10 +56,8 @@ pub fn set_routes(
             let nvs_thread = Arc::clone(&nvs);
             let wifi = Arc::clone(&wifi);
 
-            thread::spawn(move || {
-                _ = net::wifi_set_config(Arc::clone(&nvs_thread), Arc::clone(&wifi));
-                _ = net::wifi_connect(Arc::clone(&wifi));
-            });
+            net::wifi_set_config(Arc::clone(&nvs_thread), Arc::clone(&wifi))?;
+            net::wifi_connect(Arc::clone(&wifi))?;
 
             let connection = request.connection();
 

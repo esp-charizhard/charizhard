@@ -35,7 +35,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             super::check_ip(&mut request)?;
 
             let mut body = Vec::new();
-            let mut buffer = [0u8; 128];
+            let mut buffer = [0u8; 256];
 
             loop {
                 match request.read(&mut buffer) {
@@ -48,6 +48,8 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             let cert_conf: Certificate = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
 
             cert_conf.set_config(Arc::clone(&nvs))?;
+
+            log::info!("Saved Certificate to NVS!");
 
             let connection = request.connection();
 
