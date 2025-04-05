@@ -8,7 +8,7 @@ use crate::utils::nvs::{Certificate, WgConfig};
 
 const HOSTNAME: &str = "charizhard-otp.duckdns.org";
 
-static CA_CERT: &str = include_str!("../certs/letsencrypt.pem");
+static CA_CERT: &str = include_str!("../certs/ca.pem");
 
 pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str) -> anyhow::Result<()> {
     let mut tls = EspTls::new()?;
