@@ -20,3 +20,18 @@ async function resetConfig() {
 		console.error("Failed to reset configuration:", error);
 	}
 }
+
+async function setConfig() {
+	try {
+		const response = await fetch("/set-config");
+
+		if (!response.ok) {
+			console.error("Failed to reset configuration:", response.statusText);
+			return;
+		}
+
+		window.location.reload();
+	} catch (error) {
+		console.error("Failed to reset configuration:", error);
+	}
+}

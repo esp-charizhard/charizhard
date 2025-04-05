@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     biometry::init()?;
 
     if biometry::is_user_enrolled()? {
-        biometry::check_user()?;
+        while biometry::check_user().is_err() {}
     }
 
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));

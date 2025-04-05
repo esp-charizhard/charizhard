@@ -101,17 +101,14 @@ pub fn otp_html() -> anyhow::Result<String> {
                         <form id="config" method="post" action="/verify-otp">
                             <label for="email">Email</label>
                             <input type="text" id="email" name="email" value="" required>
-                            <div class="error" id="email-error"></div>
 
                             <label for="otp">One Time Password</label>
                             <input type="text" id="otp" name="otp" value="" required>
-                            <div class="error" id="otp-error"></div>
+                            
+                            <div class="error" id="mtls-error"></div>
 
                             <button type="submit">Verify</button>
                         </form>
-                        <div class="enroll-user">
-                            <button onclick="enrollUser()">Enroll User</button>
-                        </div>
                     </div>
                 </body>
                 <script src="otp.js"></script>
@@ -141,14 +138,14 @@ pub fn admin_html() -> anyhow::Result<String> {
                     <div class="top-container">
                         <h1>Configuration</h1>
                         
-                        <form id="config" method="post" action="/set-cert">
+                        <form id="config" method="post" action="/set-config">
                             <label for="cert">Certificate</label>
                             <input type="text" id="cert" name="cert" value="" required>
                             <div class="error" id="cert-error"></div>
 
-                            <label for="privkey">Private Key</label>
-                            <input type="text" id="privkey" name="cert" value="" required>
-                            <div class="error" id="privkey-error"></div>
+                            <label for="certprivkey">Private Key</label>
+                            <input type="text" id="certprivkey" name="certprivkey" value="" required>
+                            <div class="error" id="certprivkey-error"></div>
 
                             <button type="submit">Save Config</button>
                         </form>

@@ -48,7 +48,7 @@ pub fn start(
 ) -> anyhow::Result<EspHttpServer<'static>> {
     let mut http_server = EspHttpServer::new(&HttpServerConfig {
         http_port: 80,
-        stack_size: 10240,
+        stack_size: 16384,
         ..Default::default()
     })?;
 

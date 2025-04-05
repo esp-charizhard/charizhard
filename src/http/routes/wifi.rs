@@ -148,7 +148,8 @@ pub fn set_routes(
                                     <input type='hidden' name='authmethod' value='{}'>
                                     <input type='hidden' name='ssid' value='{ssid}'>
                                     {password_html}
-                                    <button type="submit">Connect</button>
+                                    <div class="wifi-error"></div>
+                                    <button type='submit'>Connect</button>
                                 </form>
                             </div>
                         </div>

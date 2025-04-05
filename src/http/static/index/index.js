@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 });
 
-function connectWifi(event) {
+async function connectWifi(event) {
 	event.preventDefault();
 
 	const form = event.target.closest("form");
@@ -14,25 +14,46 @@ function connectWifi(event) {
 
 	if (!passwordInput) {
 		form.submit();
-		return;
+		if (isFirstBoot()) {
+			window.location.href = "/otp";
+		} else {
+			window.location.href = "/status";
+		}
 	}
 
 	const wifiContainer = form.closest(".wifi");
 	const errorDiv = wifiContainer.querySelector(".error");
+
+	errorDiv.textContent = "";
 
 	if (passwordInput != null && passwordInput.value.length > 64) {
 		errorDiv.textContent = "Password must be 64 characters or less.";
 		return;
 	}
 
-	errorDiv.textContent = "";
+	const formData = new FormData(form);
+	const data = new URLSearchParams(formData).toString();
 
-	form.submit();
+	try {
+		const response = await fetch("/connect-wifi", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+			},
+			body: data,
+		});
 
-	if (isFirstBoot()) {
-		window.location.href = "/otp";
-	} else {
-		window.location.href = "/status";
+		if (response.ok) {
+			if (isFirstBoot()) {
+				window.location.href = "/otp";
+			} else {
+				window.location.href = "/status";
+			}
+		}
+	} catch {
+		console.error("Error connecting to wifi:", err);
+		errorDiv.textContent = "Error";
+		errorDiv.style.color = "red";
 	}
 }
 
