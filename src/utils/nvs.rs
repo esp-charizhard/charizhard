@@ -34,16 +34,19 @@ impl Certificate {
     const CERT: &'static str = "CERT";
     const CERT_PRIVKEY: &'static str = "CERTPRIVKEY";
 
-    fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<HeaplessString<N>> {
+    fn get_key<const N: usize>(
+        nvs: &MutexGuard<'_, EspNvs<NvsDefault>>,
+        key: &str,
+    ) -> anyhow::Result<HeaplessString<N>> {
         let mut buf = [0u8; N];
-    
+
         nvs.get_str(key, &mut buf)?;
-    
+
         let raw_value = core::str::from_utf8(&buf).unwrap_or("");
-    
+
         let mut value = HeaplessString::<N>::new();
         value.push_str(raw_value)?;
-    
+
         Ok(value)
     }
 
