@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::sync::{Arc, Mutex};
 
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
@@ -19,14 +19,14 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str)
         log::error!("No certificate to request wireguard configuration with!");
         return Err(anyhow::anyhow!("No certificate to request wireguard configuration with!"));
     }
-
+    
     log::info!("Initializing mtls..");
-
+    
     tls.connect(HOSTNAME, 443, &tls::Config {
         common_name: Some(HOSTNAME),
         ca_cert: Some(X509::pem(&CString::new(CA_CERT.as_bytes())?)),
-        client_cert: Some(X509::pem(&CString::new(cert.cert.as_bytes())?)),
-        client_key: Some(X509::pem(&CString::new(cert.privkey.as_bytes())?)),
+        client_cert: Some(X509::pem(CStr::from_bytes_until_nul(cert.cert.as_bytes())?)),
+        client_key: Some(X509::pem(CStr::from_bytes_until_nul(cert.privkey.as_bytes())?)),
         client_key_password: None,
         alpn_protos: Some(&["http/1.1"]),
         non_block: false,
