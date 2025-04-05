@@ -1,2 +1,7 @@
 src/wireguard/esp_wireguard/** linguist-vendored
 src/biometry/BMLite/** linguist-vendored
+
+*.rs text
+*.crt -text
+*.key -text
+*.pem -text
