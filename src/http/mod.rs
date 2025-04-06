@@ -169,9 +169,8 @@ pub fn start(
                 Ok(_) => {
                     // Now that we authenticated the user, we should force them to enroll their
                     // finger before they can proceed
-                    //TODO MOVE THIS TO ANOTHER HANDLER TO TELL THE USER WHEN THEY HAVE TO ENROLL
+                    // TODO MOVE THIS TO ANOTHER HANDLER TO TELL THE USER WHEN THEY HAVE TO ENROLL
                     biometry::enroll_user()?;
-                   
 
                     connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?
                 }
