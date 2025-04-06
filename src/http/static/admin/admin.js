@@ -15,9 +15,9 @@ async function resetConfig() {
 			return;
 		}
 
-		window.location.reload();
 		document.getElementById('cert').innerHTML = ''
 		document.getElementById('certprivkey').innerHTML = ''
+		window.location.reload();
 
 	} catch (error) {
 		console.error("Failed to reset configuration:", error);
@@ -33,9 +33,9 @@ async function setConfig() {
 			return;
 		}
 
-		window.location.reload();
 		document.getElementById('cert').innerHTML = ''
 		document.getElementById('certprivkey').innerHTML = ''
+		window.location.reload();
 
 	} catch (error) {
 		console.error("Failed to reset configuration:", error);
