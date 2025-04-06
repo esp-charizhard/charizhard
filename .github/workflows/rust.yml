@@ -10,6 +10,7 @@ on:
       - "logo.png"
       - ".gitignore"
       - ".gitattributes"
+      - "src/certs/*"
   pull_request:
   workflow_dispatch:
 
