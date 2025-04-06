@@ -26,9 +26,19 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 
 			if (response.status === 200) {
-				errorDiv.textContent = "OK.";
+				errorDiv.textContent = "Please enroll finger.";
 				errorDiv.style.color = "green";
-				window.location.href = "/status";
+
+				const response = await fetch("/enroll-user");
+
+				if(response.ok) {
+					errorDiv.textContent = "OK.";
+					window.location.href = "/status";
+				}
+				else {
+					errorDiv.textContent = "Failed to enroll finger.";
+				}
+				
 			} else {
 				errorDiv.textContent = "Failed to verify OTP.";
 				errorDiv.style.color = "red";

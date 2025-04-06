@@ -40,6 +40,7 @@ pub fn start(
     let mut http_server = EspHttpServer::new(&HttpServerConfig {
         http_port: 80,
         stack_size: 20480,
+        max_uri_handlers: 50,
         ..Default::default()
     })?;
 
