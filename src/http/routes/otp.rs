@@ -57,16 +57,34 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             let connection = request.connection();
 
             match mtls::fetch_config(Arc::clone(&nvs), &otp_request.email, &otp_request.otp) {
-                Ok(_) => {
-                    // Now that we authenticated the user, we should force them to enroll their
-                    // finger before they can proceed
-                    // TODO MOVE THIS TO ANOTHER HANDLER TO TELL THE USER WHEN THEY HAVE TO ENROLL
-                    biometry::enroll_user()?;
-
-                    connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?
-                }
+                Ok(_) => connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?,
                 Err(_) => connection.initiate_response(401, Some("KO"), &[("Content-Type", "text/html")])?,
             }
+
+            Ok::<(), Error>(())
+        }
+    })?;
+
+    // Handler to enroll a user into the biometric module.
+    http_server.fn_handler("/enroll-user", Method::Get, {
+        let nvs = Arc::clone(&nvs);
+        move |mut request| {
+            super::check_ip(&mut request)?;
+
+            let wg_config = WgConfig::get_config(Arc::clone(&nvs))?;
+
+            // No user has been enrolled yet and the config is filled. This should only ever
+            // be the case when we just fetched a wireguard configuration with the
+            // /verify-otp endpoint.
+            if !biometry::is_user_enrolled()? && !wg_config.is_empty() {
+                biometry::enroll_user()?;
+            } else {
+                log::warn!("Failed to enroll. Was /enroll-user called manually?");
+            }
+
+            let connection = request.connection();
+
+            connection.initiate_response(204, None, &[("Content-Type", "text/html")])?;
 
             Ok::<(), Error>(())
         }
