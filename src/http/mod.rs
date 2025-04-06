@@ -136,7 +136,7 @@ pub fn start(
             let wg_config = WgConfig::get_config(Arc::clone(&nvs))?;
 
             match wg_config.is_empty() {
-                true => connection.initiate_response(200, Some("true"), &[("Content-Type", "text/html")])?,
+                true => connection.initiate_response(204, Some("true"), &[("Content-Type", "text/html")])?,
                 false => connection.initiate_response(200, Some("false"), &[("Content-Type", "text/html")])?,
             }
 
@@ -169,7 +169,9 @@ pub fn start(
                 Ok(_) => {
                     // Now that we authenticated the user, we should force them to enroll their
                     // finger before they can proceed
+                    //TODO MOVE THIS TO ANOTHER HANDLER TO TELL THE USER WHEN THEY HAVE TO ENROLL
                     biometry::enroll_user()?;
+                   
 
                     connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?
                 }

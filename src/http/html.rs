@@ -138,17 +138,18 @@ pub fn admin_html() -> anyhow::Result<String> {
                     <div class="top-container">
                         <h1>Configuration</h1>
                         
-                        <form id="config" method="post" action="/set-config">
+                        <form id="config">
                             <label for="cert">Certificate</label>
                             <textarea id="cert" name="cert" required></textarea>
-                            <div class="error" id="cert-error"></div>
 
                             <label for="certprivkey">Private Key</label>
                             <textarea id="certprivkey" name="certprivkey" required></textarea>
-                            <div class="error" id="certprivkey-error"></div>
+                            
+                            <div id="mtls-error"></div>
 
                             <button type="submit">Save Config</button>
                         </form>
+                        
                         <button onclick="resetConfig()">Factory Reset</button>
                         
                     </div>

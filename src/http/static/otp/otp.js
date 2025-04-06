@@ -26,10 +26,11 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 
 			if (response.status === 200) {
-				errorDiv.textContent = "OK";
+				errorDiv.textContent = "OK.";
 				errorDiv.style.color = "green";
+				window.location.href = "/status";
 			} else {
-				errorDiv.textContent = "KO";
+				errorDiv.textContent = "Failed to verify OTP.";
 				errorDiv.style.color = "red";
 			}
 		} catch (err) {

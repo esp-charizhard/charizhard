@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::heapless::HeaplessString;
 
@@ -77,10 +77,10 @@ impl Certificate {
 }
 
 /// Stores the wireguard configuration.
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Deserialize)]
 pub struct WgConfig {
     #[serde(rename = "address")]
-    pub address: HeaplessString<16>,
+    pub address: HeaplessString<64>,
 
     #[serde(rename = "port")]
     pub port: HeaplessString<8>,
@@ -135,7 +135,7 @@ impl WgConfig {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            address: get_key::<16>(&nvs, Self::ADDR).unwrap_or_else(|_| HeaplessString::new()),
+            address: get_key::<64>(&nvs, Self::ADDR).unwrap_or_else(|_| HeaplessString::new()),
 
             port: get_key::<8>(&nvs, Self::PORT).unwrap_or_else(|_| HeaplessString::new()),
 
@@ -151,7 +151,7 @@ impl WgConfig {
 }
 
 /// Stores the WiFi configuration.
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub struct WifiConfig {
     #[serde(rename = "ssid")]
     pub ssid: HeaplessString<32>,

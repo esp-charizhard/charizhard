@@ -63,7 +63,7 @@ ignored = ["embedded-svc"]
 log = { version = "0.4", default-features = false }
 esp-idf-svc = { version = "0.51", default-features = false, features = ["std"] }
 embedded-svc = { version = "0.28", default-features = true }
-heapless = { version = "0.8", default-features = false }
+heapless = { version = "0.8", default-features = false, features = ["serde"] }
 anyhow = { version = "1.0", default-features = false }
 base64 = { version = "0.22", default-features = false, features = ["std"] }
 serde = { version = "1.0", default-features = false, features = ["derive"] }

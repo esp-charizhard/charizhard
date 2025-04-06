@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
 use heapless::String;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// Wrapper on [`heapless::String`] for additional capabilities.
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Deserialize)]
 pub struct HeaplessString<const N: usize>(pub String<N>);
 
 impl<const N: usize> HeaplessString<N> {

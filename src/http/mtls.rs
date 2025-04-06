@@ -31,7 +31,7 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str)
         alpn_protos: Some(&["http/1.1"]),
         non_block: false,
         use_secure_element: false,
-        timeout_ms: 4000,
+        timeout_ms: 20000,
         use_global_ca_store: false,
         skip_common_name: false,
         keep_alive_cfg: None,
@@ -44,7 +44,7 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str)
         HOSTNAME, email, otp
     );
 
-    log::info!("REQUEST: \n {}", request);
+    log::info!("Sending TLS request..");
 
     tls.write_all(request.as_bytes())?;
 
@@ -59,15 +59,17 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str)
         }
     }
 
-    let response = String::from_utf8(body)?;
+    log::info!("Parsing response..");
 
-    log::info!("MTLS RESPONSE: {}", response);
+    let response = String::from_utf8(body)?;
 
     // Split headers and body
     let parts: Vec<&str> = response.split("\r\n\r\n").collect();
     let contents = if parts.len() > 1 { parts[1] } else { "" };
 
     let wg_conf: WgConfig = serde_urlencoded::from_str(contents)?;
+
+    log::info!("Saving fetched wireguard config to nvs..");
 
     // Write newly fetched config to nvs.
     wg_conf.set_config(Arc::clone(&nvs))?;

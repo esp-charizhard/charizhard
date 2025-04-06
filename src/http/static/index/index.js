@@ -40,8 +40,7 @@ async function connectWifi(event) {
 			} else {
 				window.location.href = "/status";
 			}
-		}
-		else {
+		} else {
 			errorDiv.textContent = "Invalid password.";
 			errorDiv.style.color = "red";
 		}
@@ -56,12 +55,9 @@ async function isFirstBoot() {
 	try {
 		const response = await fetch("/is-first-boot");
 
-		if (response.ok) {
-			const responseText = await response.text();
-
-			return responseText.trim() === "true";
+		if (response.status == 204) {
+			return true;
 		} else {
-			console.error("Error fetching the first boot status:", response.status);
 			return false;
 		}
 	} catch (error) {
