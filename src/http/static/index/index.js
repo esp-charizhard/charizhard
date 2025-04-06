@@ -35,7 +35,9 @@ async function connectWifi(event) {
 		});
 
 		if (response.ok) {
-			if (isFirstBoot()) {
+			let first_boot = await isFirstBoot();
+			
+			if (first_boot) {
 				window.location.href = "/otp";
 			} else {
 				window.location.href = "/status";
@@ -52,18 +54,19 @@ async function connectWifi(event) {
 }
 
 async function isFirstBoot() {
-	try {
-		const response = await fetch("/is-first-boot");
+    try {
+        const response = await fetch("/is-first-boot");
 
-		if (response.status == 204) {
-			return true;
-		} else {
+        if (response.status === 204) {
+            return true;  
+        } 
+		else {
 			return false;
 		}
-	} catch (error) {
-		console.error("Error during fetch:", error);
-		return false;
-	}
+    } catch (error) {
+        console.error("Error during fetch:", error);
+        return false;
+    }
 }
 
 async function fetchScannedWifis() {
