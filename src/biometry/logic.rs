@@ -209,8 +209,8 @@ pub fn verify_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
     let stored_template: [u8; 2048] = Fingerprint::get_template(Arc::clone(&nvs))?.template;
     let template: [u8; 2048] = get_template::<2048>(ctx.chain, 1)?;
 
-    let norm_sim = normalized_similarity(&stored_template, &template);
-    let cos_sim = cosine_similarity(&stored_template, &template);
+    let norm_sim = normalized_similarity(&stored_template, &template)?;
+    let cos_sim = cosine_similarity(&stored_template, &template)?;
 
     log::info!("Normalized similarity: {:.2}%", norm_sim * 100.0);
     log::info!("Cosine similarity: {:.2}%", cos_sim * 100.0);
@@ -226,27 +226,28 @@ pub fn verify_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
 }
 
 /// Calculates the normalized similarity (value closeness).
-fn normalized_similarity(a: &[u8], b: &[u8]) -> f32 {
-    let total_diff: u32 = a
-        .iter()
-        .zip(b.iter())
-        .map(|(x, y)| (*x as i32 - *y as i32).unsigned_abs())
-        .sum();
+fn normalized_similarity(a: &[u8; 2048], b: &[u8; 2048]) -> anyhow::Result<f32> {
+    let total_diff: u32 = a.iter().zip(b.iter()).map(|(x, y)| x.abs_diff(*y) as u32).sum();
 
-    let max_diff = 255 * a.len() as u32;
-    1.0 - (total_diff as f32 / max_diff as f32)
+    const MAX_DIFF: u32 = 255 * 2048;
+    Ok(1.0 - (total_diff as f32 / MAX_DIFF as f32))
 }
 
 /// Calculates the cosine similarity (shape similarity).
-fn cosine_similarity(a: &[u8], b: &[u8]) -> f32 {
-    let dot_product: u32 = a.iter().zip(b.iter()).map(|(x, y)| (*x as u32) * (*y as u32)).sum();
+fn cosine_similarity(a: &[u8; 2048], b: &[u8; 2048]) -> anyhow::Result<f32> {
+    let (dot_product, norm_a_sq, norm_b_sq) = a
+        .iter()
+        .zip(b.iter())
+        .fold((0u32, 0u32, 0u32), |(dot, a2, b2), (&x, &y)| {
+            (dot + x as u32 * y as u32, a2 + x as u32 * x as u32, b2 + y as u32 * y as u32)
+        });
 
-    let norm_a = (a.iter().map(|x| (*x as u32) * (*x as u32)).sum::<u32>() as f32).sqrt();
-    let norm_b = (b.iter().map(|x| (*x as u32) * (*x as u32)).sum::<u32>() as f32).sqrt();
+    let norm_a = (norm_a_sq as f32).sqrt();
+    let norm_b = (norm_b_sq as f32).sqrt();
 
     if norm_a == 0.0 || norm_b == 0.0 {
-        return 0.0;
+        return Err(anyhow::anyhow!("Zero vector!"));
     }
 
-    dot_product as f32 / (norm_a * norm_b)
+    Ok(dot_product as f32 / (norm_a * norm_b))
 }

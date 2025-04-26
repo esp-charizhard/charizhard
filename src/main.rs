@@ -33,13 +33,9 @@ fn main() -> anyhow::Result<()> {
 
     biometry::init()?;
 
-    let is_user_enrolled = biometry::is_user_enrolled()?;
-    // ! TODO REFACTOR THIS SO SECRETS ARE NOT IN RAM UNTIL USER HAS BEEN AUTHENTICATED
-    let wg_config = WgConfig::get_config(Arc::clone(&nvs_config))?;
+    // biometry::store_template(Arc::clone(&nvs_config))?;
 
-    biometry::store_template(Arc::clone(&nvs_config))?;
-
-    match (is_user_enrolled, wg_config.is_empty()) {
+    match (biometry::is_user_enrolled()?, WgConfig::is_empty(Arc::clone(&nvs_config))) {
         // User enrolled, Empty config.
         // Should not happen but is not problematic.
         (true, true) => {}
@@ -53,12 +49,14 @@ fn main() -> anyhow::Result<()> {
             if biometry::verify_template(Arc::clone(&nvs_config)).is_err() {
                 log::error!("Similitude check failed! Wiping configuration..");
 
-                // biometry::reset()?;
+                unreachable!("Should not go past this for dev");
 
-                // unsafe {
-                //     esp_idf_svc::sys::nvs_flash_erase();
-                //     esp_idf_svc::sys::esp_restart();
-                // }
+                biometry::reset()?;
+
+                unsafe {
+                    esp_idf_svc::sys::nvs_flash_erase();
+                    esp_idf_svc::sys::esp_restart();
+                }
             } else {
                 // If the authentication passes, we store the newly updated template into nvs.
                 biometry::store_template(Arc::clone(&nvs_config))?;

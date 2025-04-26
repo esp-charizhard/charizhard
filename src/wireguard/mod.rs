@@ -65,7 +65,7 @@ pub fn sync_systime() -> anyhow::Result<()> {
 fn create_ctx_conf(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<(*mut WgCtx, *mut WgConfig)> {
     let nvs_conf = NvsWgConfig::get_config(Arc::clone(&nvs))?;
 
-    if nvs_conf.is_empty() {
+    if NvsWgConfig::is_empty(Arc::clone(&nvs)) {
         return Err(anyhow::anyhow!("Attempted to connect to wireguard with no set config!"));
     }
 
