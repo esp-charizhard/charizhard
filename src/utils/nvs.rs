@@ -6,7 +6,7 @@ use serde::Deserialize;
 use super::heapless::HeaplessString;
 
 /// Retrieves and sanitizes a key from nvs.
-fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<HeaplessString<N>> {
+fn get_str<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<HeaplessString<N>> {
     let mut buf = [0u8; N];
 
     nvs.get_str(key, &mut buf)?;
@@ -19,6 +19,38 @@ fn get_key<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) 
     value.push_str(raw_value)?;
 
     Ok(value.clean_string())
+}
+
+fn get_blob<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<[u8; N]> {
+    let mut buf = [0u8; N];
+
+    nvs.get_blob(key, &mut buf)?;
+
+    Ok(buf)
+}
+
+pub struct Fingerprint {
+    pub template: [u8; 2048],
+}
+
+impl Fingerprint {
+    const TEMPLATE: &'static str = "TEMPLATE";
+
+    pub fn set_template(template: &[u8; 2048], nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+        let nvs = nvs.lock().unwrap();
+
+        nvs.set_blob(Self::TEMPLATE, template)?;
+
+        Ok(())
+    }
+
+    pub fn get_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<Self> {
+        let nvs = nvs.lock().unwrap();
+
+        Ok(Self {
+            template: get_blob::<2048>(&nvs, Self::TEMPLATE).unwrap(),
+        })
+    }
 }
 
 /// Client certificate data for mTLS.
@@ -34,6 +66,8 @@ impl Certificate {
     const CERT: &'static str = "CERT";
     const CERT_PRIVKEY: &'static str = "CERTPRIVKEY";
 
+    // ! TODO REMOVE THIS FUNCTION
+    /// Retrives data from nvs.
     fn get_key<const N: usize>(
         nvs: &MutexGuard<'_, EspNvs<NvsDefault>>,
         key: &str,
@@ -50,6 +84,7 @@ impl Certificate {
         Ok(value)
     }
 
+    /// Checks whether the struct contains a certificate.
     pub fn is_empty(&self) -> bool {
         self.cert.is_empty() || self.privkey.is_empty()
     }
@@ -106,6 +141,7 @@ impl WgConfig {
     const PORT: &'static str = "PORT";
     const SERVER_PUB: &'static str = "PUBKEY";
 
+    /// Checks whether the struct contains a configuration.
     pub fn is_empty(&self) -> bool {
         self.address.is_empty()
             || self.port.is_empty()
@@ -135,17 +171,17 @@ impl WgConfig {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            address: get_key::<64>(&nvs, Self::ADDR).unwrap_or_else(|_| HeaplessString::new()),
+            address: get_str::<64>(&nvs, Self::ADDR).unwrap_or_else(|_| HeaplessString::new()),
 
-            port: get_key::<8>(&nvs, Self::PORT).unwrap_or_else(|_| HeaplessString::new()),
+            port: get_str::<8>(&nvs, Self::PORT).unwrap_or_else(|_| HeaplessString::new()),
 
-            cli_priv_key: get_key::<64>(&nvs, Self::CLIENT_PRIV).unwrap_or_else(|_| HeaplessString::new()),
+            cli_priv_key: get_str::<64>(&nvs, Self::CLIENT_PRIV).unwrap_or_else(|_| HeaplessString::new()),
 
-            serv_pub_key: get_key::<64>(&nvs, Self::SERVER_PUB).unwrap_or_else(|_| HeaplessString::new()),
+            serv_pub_key: get_str::<64>(&nvs, Self::SERVER_PUB).unwrap_or_else(|_| HeaplessString::new()),
 
-            allowed_ip: get_key::<16>(&nvs, Self::ALLOWED_IP).unwrap_or_else(|_| HeaplessString::new()),
+            allowed_ip: get_str::<16>(&nvs, Self::ALLOWED_IP).unwrap_or_else(|_| HeaplessString::new()),
 
-            allowed_mask: get_key::<16>(&nvs, Self::ALLOWED_MASK).unwrap_or_else(|_| HeaplessString::new()),
+            allowed_mask: get_str::<16>(&nvs, Self::ALLOWED_MASK).unwrap_or_else(|_| HeaplessString::new()),
         })
     }
 }
@@ -185,11 +221,11 @@ impl WifiConfig {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            ssid: get_key::<32>(&nvs, Self::SSID).unwrap_or_else(|_| HeaplessString::new()),
+            ssid: get_str::<32>(&nvs, Self::SSID).unwrap_or_else(|_| HeaplessString::new()),
 
-            password: get_key::<64>(&nvs, Self::PASSWORD).unwrap_or_else(|_| HeaplessString::new()),
+            password: get_str::<64>(&nvs, Self::PASSWORD).unwrap_or_else(|_| HeaplessString::new()),
 
-            auth_method: get_key::<32>(&nvs, Self::AUTH_METHOD).unwrap_or_else(|_| HeaplessString::new()),
+            auth_method: get_str::<32>(&nvs, Self::AUTH_METHOD).unwrap_or_else(|_| HeaplessString::new()),
         })
     }
 }
