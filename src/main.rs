@@ -44,12 +44,13 @@ fn main() -> anyhow::Result<()> {
         // We need to check for template tampering while the key was in a powered down state.
         (true, false) => {
             //TODO! CHECK TEMPLATE TAMPERING
+            //Authenticate user
             while biometry::check_user().is_err() {}
         },
         // No user enrolled, No config. 
         // We do nothing in this case, the key is in factory state.
         (false, true) => {},
-        // No user enrolled, Set config. 
+        // No user enrolled (or more than 1), Set config. 
         // Tampering has occurred. We wipe the dongle.
         (false, false) => {
             biometry::reset()?;
