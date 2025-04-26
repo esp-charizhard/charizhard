@@ -36,21 +36,21 @@ fn main() -> anyhow::Result<()> {
     let is_user_enrolled = biometry::is_user_enrolled()?;
     let wg_config = WgConfig::get_config(Arc::clone(&nvs_config))?;
 
-    match (is_user_enrolled, wg_config.is_empty()){
-        // User enrolled, Empty config. 
+    match (is_user_enrolled, wg_config.is_empty()) {
+        // User enrolled, Empty config.
         // Should not happen but is not problematic.
-        (true, true) => {},
-        // User enrolled, Set config. 
+        (true, true) => {}
+        // User enrolled, Set config.
         // We need to check for template tampering while the key was in a powered down state.
         (true, false) => {
-            //TODO! CHECK TEMPLATE TAMPERING
-            //Authenticate user
+            // TODO! CHECK TEMPLATE TAMPERING
+            // Authenticate user
             while biometry::check_user().is_err() {}
-        },
-        // No user enrolled, No config. 
+        }
+        // No user enrolled, No config.
         // We do nothing in this case, the key is in factory state.
-        (false, true) => {},
-        // No user enrolled (or more than 1), Set config. 
+        (false, true) => {}
+        // No user enrolled (or more than 1), Set config.
         // Tampering has occurred. We wipe the dongle.
         (false, false) => {
             biometry::reset()?;
@@ -59,7 +59,7 @@ fn main() -> anyhow::Result<()> {
                 esp_idf_svc::sys::nvs_flash_erase();
                 esp_idf_svc::sys::esp_restart();
             }
-        },
+        }
     }
 
     let eth_netif = net::eth_start(peripherals.pins, peripherals.mac, sysloop.clone())?;
