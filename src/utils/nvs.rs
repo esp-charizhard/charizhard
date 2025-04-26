@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use super::heapless::HeaplessString;
 
-/// Retrieves and sanitizes a key from nvs.
+/// Retrieves and sanitizes a string from nvs.
 fn get_str<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<HeaplessString<N>> {
     let mut buf = [0u8; N];
 
@@ -21,12 +21,30 @@ fn get_str<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) 
     Ok(value.clean_string())
 }
 
-fn get_blob<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<[u8; N]> {
+/// Retrieves and sanitizes a fingerprint from nvs.
+fn get_fingerprint<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<[u8; N]> {
     let mut buf = [0u8; N];
 
     nvs.get_blob(key, &mut buf)?;
 
     Ok(buf)
+}
+
+/// Retrives certificate data from nvs.
+fn get_certificate<const N: usize>(
+    nvs: &MutexGuard<'_, EspNvs<NvsDefault>>,
+    key: &str,
+) -> anyhow::Result<HeaplessString<N>> {
+    let mut buf = [0u8; N];
+
+    nvs.get_str(key, &mut buf)?;
+
+    let raw_value = core::str::from_utf8(&buf).unwrap_or("");
+
+    let mut value = HeaplessString::<N>::new();
+    value.push_str(raw_value)?;
+
+    Ok(value)
 }
 
 pub struct Fingerprint {
@@ -48,7 +66,7 @@ impl Fingerprint {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            template: get_blob::<2048>(&nvs, Self::TEMPLATE).unwrap(),
+            template: get_fingerprint::<2048>(&nvs, Self::TEMPLATE).unwrap(),
         })
     }
 }
@@ -65,24 +83,6 @@ pub struct Certificate {
 impl Certificate {
     const CERT: &'static str = "CERT";
     const CERT_PRIVKEY: &'static str = "CERTPRIVKEY";
-
-    // ! TODO REMOVE THIS FUNCTION
-    /// Retrives data from nvs.
-    fn get_key<const N: usize>(
-        nvs: &MutexGuard<'_, EspNvs<NvsDefault>>,
-        key: &str,
-    ) -> anyhow::Result<HeaplessString<N>> {
-        let mut buf = [0u8; N];
-
-        nvs.get_str(key, &mut buf)?;
-
-        let raw_value = core::str::from_utf8(&buf).unwrap_or("");
-
-        let mut value = HeaplessString::<N>::new();
-        value.push_str(raw_value)?;
-
-        Ok(value)
-    }
 
     /// Checks whether the struct contains a certificate.
     pub fn is_empty(&self) -> bool {
@@ -104,9 +104,9 @@ impl Certificate {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            cert: Certificate::get_key::<2048>(&nvs, Self::CERT).unwrap_or_else(|_| HeaplessString::new()),
+            cert: get_certificate::<2048>(&nvs, Self::CERT).unwrap_or_else(|_| HeaplessString::new()),
 
-            privkey: Certificate::get_key::<2048>(&nvs, Self::CERT_PRIVKEY).unwrap_or_else(|_| HeaplessString::new()),
+            privkey: get_certificate::<2048>(&nvs, Self::CERT_PRIVKEY).unwrap_or_else(|_| HeaplessString::new()),
         })
     }
 }
