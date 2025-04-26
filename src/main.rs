@@ -34,7 +34,10 @@ fn main() -> anyhow::Result<()> {
     biometry::init()?;
 
     let is_user_enrolled = biometry::is_user_enrolled()?;
+    // ! TODO REFACTOR THIS SO SECRETS ARE NOT IN RAM UNTIL USER HAS BEEN AUTHENTICATED
     let wg_config = WgConfig::get_config(Arc::clone(&nvs_config))?;
+
+    biometry::store_template(Arc::clone(&nvs_config))?;
 
     match (is_user_enrolled, wg_config.is_empty()) {
         // User enrolled, Empty config.
@@ -43,9 +46,23 @@ fn main() -> anyhow::Result<()> {
         // User enrolled, Set config.
         // We need to check for template tampering while the key was in a powered down state.
         (true, false) => {
-            // TODO! CHECK TEMPLATE TAMPERING
             // Authenticate user
             while biometry::check_user().is_err() {}
+            // Verify user is legitimate by checking whether their fingerprint has
+            // drastically changed since the last successful authentication
+            if biometry::verify_template(Arc::clone(&nvs_config)).is_err() {
+                log::error!("Similitude check failed! Wiping configuration..");
+
+                // biometry::reset()?;
+
+                // unsafe {
+                //     esp_idf_svc::sys::nvs_flash_erase();
+                //     esp_idf_svc::sys::esp_restart();
+                // }
+            } else {
+                // If the authentication passes, we store the newly updated template into nvs.
+                biometry::store_template(Arc::clone(&nvs_config))?;
+            }
         }
         // No user enrolled, No config.
         // We do nothing in this case, the key is in factory state.
@@ -53,6 +70,8 @@ fn main() -> anyhow::Result<()> {
         // No user enrolled (or more than 1), Set config.
         // Tampering has occurred. We wipe the dongle.
         (false, false) => {
+            log::error!("Tampering detected! Wiping configuration..");
+
             biometry::reset()?;
 
             unsafe {

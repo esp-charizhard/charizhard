@@ -9,9 +9,9 @@ type Params = console_initparams_t;
 type HcpArg = HCP_arg_t;
 type PinsConfig = pin_config_t;
 
-pub use logic::{check_user, enroll_user, init, is_user_enrolled, reset};
+pub use logic::{check_user, enroll_user, init, is_user_enrolled, reset, store_template, verify_template};
 
-#[allow(unused)]
+#[allow(unused_imports)]
 mod functions {
     pub use esp_idf_svc::sys::bmlite::{
         bep_capture,
@@ -75,7 +75,6 @@ mod results {
         fpc_bep_result_t_FPC_BEP_RESULT_WRONG_STATE as WRONG_STATE,
     };
 
-    #[allow(non_snake_case)]
     pub fn debug(res: i32) -> String {
         match res {
             FPC_OK => "OK.".to_string(),
@@ -91,7 +90,7 @@ mod results {
             WRONG_STATE => "Operation cannot be performed in current state.".to_string(),
             TIMEOUT => "Operation timed out.".to_string(),
             ID_NOT_UNIQUE => "ID is not unique.".to_string(),
-            ID_NOT_FOUND => "ID is not found.".to_string(),
+            ID_NOT_FOUND => "ID was not found.".to_string(),
             INVALID_FORMAT => "Invalid format.".to_string(),
             IMAGE_CAPTURE_ERROR => "Image capture error occurred.".to_string(),
             SENSOR_MISMATCH => "Sensor hardware ID or sensor configuration mismatch.".to_string(),

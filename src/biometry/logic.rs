@@ -1,5 +1,7 @@
 use core::ptr;
+use std::sync::{Arc, Mutex};
 
+use esp_idf_svc::nvs::{EspNvs, NvsDefault};
 use esp_idf_svc::sys::bmlite::{
     gpio_num_t_GPIO_NUM_12,
     gpio_num_t_GPIO_NUM_14,
@@ -15,6 +17,7 @@ use esp_idf_svc::sys::bmlite::{
 use super::commands::*;
 use super::ctx::SENSOR_CTX;
 use super::{HcpArg, HcpCom, Params, PinsConfig};
+use crate::utils::nvs::Fingerprint;
 
 /// Initializes an SPI configurationa long with an HcpCom struct to communicate
 /// with the BM-Lite. This should always be called once and only once at th
@@ -168,4 +171,82 @@ pub fn check_user() -> anyhow::Result<()> {
         }
         Err(_) => Err(anyhow::anyhow!("Failed to identify finger!")),
     }
+}
+
+/// Stores the template of an enrolled user into nvs for later matching.
+pub fn store_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+    log::info!("Saving template to ESP32..");
+
+    let ctx = SENSOR_CTX.lock().unwrap();
+
+    if !ctx.is_set() {
+        log::warn!("SENSOR_CTX is not set! Cannot check non-existent.");
+        return Err(anyhow::anyhow!("SENSOR_CTX is not set!"));
+    }
+
+    // Retrieve template from sensor.
+    let template = get_template::<2048>(ctx.chain, 1)?;
+
+    // Save into nvs.
+    Fingerprint::set_template(&template, Arc::clone(&nvs))?;
+
+    Ok(())
+}
+
+/// Verifies the template stored in nvs against the one the user authenticated
+/// with. If the cosine or normalized similarity between the two vectors dips
+/// below 90%, we assume tampering has occurred and throw an error.
+pub fn verify_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+    log::info!("Verifying template match..");
+
+    let ctx = SENSOR_CTX.lock().unwrap();
+
+    if !ctx.is_set() {
+        log::warn!("SENSOR_CTX is not set! Cannot check non-existent.");
+        return Err(anyhow::anyhow!("SENSOR_CTX is not set!"));
+    }
+
+    let stored_template: [u8; 2048] = Fingerprint::get_template(Arc::clone(&nvs))?.template;
+    let template: [u8; 2048] = get_template::<2048>(ctx.chain, 1)?;
+
+    let norm_sim = normalized_similarity(&stored_template, &template);
+    let cos_sim = cosine_similarity(&stored_template, &template);
+
+    log::info!("Normalized similarity: {:.2}%", norm_sim * 100.0);
+    log::info!("Cosine similarity: {:.2}%", cos_sim * 100.0);
+
+    if norm_sim < 0.9 || cos_sim < 0.9 {
+        log::error!("Template verification failed: similarity below 90%");
+        return Err(anyhow::anyhow!("Fingerprint template mismatch! Possible tampering detected."));
+    }
+
+    log::info!("Template verification passed!");
+
+    Ok(())
+}
+
+/// Calculates the normalized similarity (value closeness).
+fn normalized_similarity(a: &[u8], b: &[u8]) -> f32 {
+    let total_diff: u32 = a
+        .iter()
+        .zip(b.iter())
+        .map(|(x, y)| (*x as i32 - *y as i32).unsigned_abs())
+        .sum();
+
+    let max_diff = 255 * a.len() as u32;
+    1.0 - (total_diff as f32 / max_diff as f32)
+}
+
+/// Calculates the cosine similarity (shape similarity).
+fn cosine_similarity(a: &[u8], b: &[u8]) -> f32 {
+    let dot_product: u32 = a.iter().zip(b.iter()).map(|(x, y)| (*x as u32) * (*y as u32)).sum();
+
+    let norm_a = (a.iter().map(|x| (*x as u32) * (*x as u32)).sum::<u32>() as f32).sqrt();
+    let norm_b = (b.iter().map(|x| (*x as u32) * (*x as u32)).sum::<u32>() as f32).sqrt();
+
+    if norm_a == 0.0 || norm_b == 0.0 {
+        return 0.0;
+    }
+
+    dot_product as f32 / (norm_a * norm_b)
 }

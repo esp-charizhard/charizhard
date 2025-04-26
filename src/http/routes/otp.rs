@@ -78,6 +78,10 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             // /verify-otp endpoint.
             if !biometry::is_user_enrolled()? && !wg_config.is_empty() {
                 biometry::enroll_user()?;
+                // Once enrolled we need to save the fingerprint on the esp32 to be able to
+                // detect hardware attacks performed on the sensor while the esp32 is powered
+                // down.
+                biometry::store_template(Arc::clone(&nvs))?;
             } else {
                 log::warn!("Failed to enroll. Was /enroll-user called manually?");
             }
