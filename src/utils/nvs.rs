@@ -12,10 +12,10 @@ fn get_str<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) 
     nvs.get_str(key, &mut buf)?;
 
     let raw_value = core::str::from_utf8(&buf)
-        .map(|s| s.trim_end_matches('\0'))
-        .unwrap_or("");
+        .map(|s| s.trim_end_matches('\0'))?;
 
     let mut value = HeaplessString::<N>::new();
+
     value.push_str(raw_value)?;
 
     Ok(value.clean_string())
@@ -39,10 +39,9 @@ fn get_certificate<const N: usize>(
 
     nvs.get_str(key, &mut buf)?;
 
-    let raw_value = core::str::from_utf8(&buf).unwrap_or("");
-
     let mut value = HeaplessString::<N>::new();
-    value.push_str(raw_value)?;
+    
+    value.push_str(core::str::from_utf8(&buf)?)?;
 
     Ok(value)
 }
@@ -66,7 +65,7 @@ impl Fingerprint {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            template: get_fingerprint::<2048>(&nvs, Self::TEMPLATE).unwrap(),
+            template: get_fingerprint::<2048>(&nvs, Self::TEMPLATE)?,
         })
     }
 }
@@ -104,9 +103,9 @@ impl Certificate {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            cert: get_certificate::<2048>(&nvs, Self::CERT).unwrap_or_else(|_| HeaplessString::new()),
+            cert: get_certificate::<2048>(&nvs, Self::CERT)?,
 
-            privkey: get_certificate::<2048>(&nvs, Self::CERT_PRIVKEY).unwrap_or_else(|_| HeaplessString::new()),
+            privkey: get_certificate::<2048>(&nvs, Self::CERT_PRIVKEY)?,
         })
     }
 }
@@ -141,14 +140,16 @@ impl WgConfig {
     const PORT: &'static str = "PORT";
     const SERVER_PUB: &'static str = "PUBKEY";
 
-    /// Checks whether the struct contains a configuration.
-    pub fn is_empty(&self) -> bool {
-        self.address.is_empty()
-            || self.port.is_empty()
-            || self.cli_priv_key.is_empty()
-            || self.serv_pub_key.is_empty()
-            || self.allowed_ip.is_empty()
-            || self.allowed_mask.is_empty()
+    /// Checks whether nvs contains a configuration.
+    pub fn is_empty(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> bool {
+        let nvs = nvs.lock().unwrap();
+
+        !(nvs.contains(Self::ADDR).unwrap_or(false) &&
+        nvs.contains(Self::PORT).unwrap_or(false) &&
+        nvs.contains(Self::CLIENT_PRIV).unwrap_or(false) &&
+        nvs.contains(Self::SERVER_PUB).unwrap_or(false) &&
+        nvs.contains(Self::ALLOWED_IP).unwrap_or(false) &&
+        nvs.contains(Self::ALLOWED_MASK).unwrap_or(false))
     }
 
     /// Call to set the Wireguard configuration in nvs.
@@ -171,17 +172,17 @@ impl WgConfig {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            address: get_str::<64>(&nvs, Self::ADDR).unwrap_or_else(|_| HeaplessString::new()),
+            address: get_str::<64>(&nvs, Self::ADDR)?,
 
-            port: get_str::<8>(&nvs, Self::PORT).unwrap_or_else(|_| HeaplessString::new()),
+            port: get_str::<8>(&nvs, Self::PORT)?,
 
-            cli_priv_key: get_str::<64>(&nvs, Self::CLIENT_PRIV).unwrap_or_else(|_| HeaplessString::new()),
+            cli_priv_key: get_str::<64>(&nvs, Self::CLIENT_PRIV)?,
 
-            serv_pub_key: get_str::<64>(&nvs, Self::SERVER_PUB).unwrap_or_else(|_| HeaplessString::new()),
+            serv_pub_key: get_str::<64>(&nvs, Self::SERVER_PUB)?,
 
-            allowed_ip: get_str::<16>(&nvs, Self::ALLOWED_IP).unwrap_or_else(|_| HeaplessString::new()),
+            allowed_ip: get_str::<16>(&nvs, Self::ALLOWED_IP)?,
 
-            allowed_mask: get_str::<16>(&nvs, Self::ALLOWED_MASK).unwrap_or_else(|_| HeaplessString::new()),
+            allowed_mask: get_str::<16>(&nvs, Self::ALLOWED_MASK)?,
         })
     }
 }
@@ -221,11 +222,11 @@ impl WifiConfig {
         let nvs = nvs.lock().unwrap();
 
         Ok(Self {
-            ssid: get_str::<32>(&nvs, Self::SSID).unwrap_or_else(|_| HeaplessString::new()),
+            ssid: get_str::<32>(&nvs, Self::SSID)?,
 
-            password: get_str::<64>(&nvs, Self::PASSWORD).unwrap_or_else(|_| HeaplessString::new()),
+            password: get_str::<64>(&nvs, Self::PASSWORD)?,
 
-            auth_method: get_str::<32>(&nvs, Self::AUTH_METHOD).unwrap_or_else(|_| HeaplessString::new()),
+            auth_method: get_str::<32>(&nvs, Self::AUTH_METHOD)?,
         })
     }
 }
