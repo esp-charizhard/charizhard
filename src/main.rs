@@ -45,12 +45,15 @@ fn main() -> anyhow::Result<()> {
             // Authenticate user
             while biometry::check_user().is_err() {}
             // Verify user is legitimate by checking whether their fingerprint has
-            // drastically changed since the last successful authentication
-            if biometry::verify_template(Arc::clone(&nvs_config)).is_err() {
+            // drastically changed since the last successful authentication.
+            // Fingerprints should be at least 90% similar in cosine and normalized
+            // similarities to pass this check.
+            if biometry::match_template(0.9, Arc::clone(&nvs_config)).is_err() {
                 log::error!("Similitude check failed! Wiping configuration..");
 
                 unreachable!("Should not go past this for dev");
 
+                #[allow(unreachable_code)]
                 biometry::reset()?;
 
                 unsafe {

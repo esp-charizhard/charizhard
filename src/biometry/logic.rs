@@ -196,7 +196,7 @@ pub fn store_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()>
 /// Verifies the template stored in nvs against the one the user authenticated
 /// with. If the cosine or normalized similarity between the two vectors dips
 /// below 90%, we assume tampering has occurred and throw an error.
-pub fn verify_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+pub fn match_template(min_sim: f32, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
     log::info!("Verifying template match..");
 
     let ctx = SENSOR_CTX.lock().unwrap();
@@ -215,8 +215,7 @@ pub fn verify_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()
     log::info!("Normalized similarity: {:.2}%", norm_sim * 100.0);
     log::info!("Cosine similarity: {:.2}%", cos_sim * 100.0);
 
-    if norm_sim < 0.9 || cos_sim < 0.9 {
-        log::error!("Template verification failed: similarity below 90%");
+    if norm_sim < min_sim || cos_sim < min_sim {
         return Err(anyhow::anyhow!("Fingerprint template mismatch! Possible tampering detected."));
     }
 
