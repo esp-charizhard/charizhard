@@ -22,7 +22,7 @@ async function resetConfig() {
 		document.getElementById("cert").value = "";
 		document.getElementById("certprivkey").value = "";
 
-		errorDiv.textContent = "Success. Reboot dongle to finish.";
+		errorDiv.textContent = "Success. Dongle will reboot to finish..";
 		errorDiv.style.color = "green";
 	} catch (error) {
 		console.error("Failed to reset configuration:", error);

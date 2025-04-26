@@ -30,11 +30,11 @@ pub type WgCtx = wireguard_ctx_t;
 
 /// The maximum number of attempts to sync system time before declaring the call
 /// to [sync_systime] a failure.
-const MAX_SNTP_ATTEMPTS: u32 = 5;
+const MAX_SNTP_ATTEMPTS: u32 = 10;
 
 /// The maximum number of attempts to connect to a wireguard peer before
 /// declaring the call to [start_tunnel] a failure.
-const MAX_WG_ATTEMPTS: u32 = 5;
+const MAX_WG_ATTEMPTS: u32 = 10;
 
 /// Syncs system time with UTC using [`EspSntp`]. This is necessary to establish
 /// a wireguard tunnel. Care should thus be taken to always call this function

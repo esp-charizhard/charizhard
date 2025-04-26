@@ -4,6 +4,7 @@ use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::nvs::{EspDefaultNvsPartition, EspNvs};
+use utils::nvs::WgConfig;
 
 /// Handles the BM-Lite sensor module HAL and SPI connection.
 mod biometry;
@@ -28,13 +29,37 @@ fn main() -> anyhow::Result<()> {
     let sysloop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
+    let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
+
     biometry::init()?;
 
-    if biometry::is_user_enrolled()? {
-        while biometry::check_user().is_err() {}
-    }
+    let is_user_enrolled = biometry::is_user_enrolled()?;
+    let wg_config = WgConfig::get_config(Arc::clone(&nvs_config))?;
 
-    let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
+    match (is_user_enrolled, wg_config.is_empty()){
+        // User enrolled, Empty config. 
+        // Should not happen but is not problematic.
+        (true, true) => {},
+        // User enrolled, Set config. 
+        // We need to check for template tampering while the key was in a powered down state.
+        (true, false) => {
+            //TODO! CHECK TEMPLATE TAMPERING
+            while biometry::check_user().is_err() {}
+        },
+        // No user enrolled, No config. 
+        // We do nothing in this case, the key is in factory state.
+        (false, true) => {},
+        // No user enrolled, Set config. 
+        // Tampering has occurred. We wipe the dongle.
+        (false, false) => {
+            biometry::reset()?;
+
+            unsafe {
+                esp_idf_svc::sys::nvs_flash_erase();
+                esp_idf_svc::sys::esp_restart();
+            }
+        },
+    }
 
     let eth_netif = net::eth_start(peripherals.pins, peripherals.mac, sysloop.clone())?;
     let wifi_netif = net::wifi_init(peripherals.modem, sysloop.clone(), nvs.clone())?;

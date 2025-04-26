@@ -8,6 +8,7 @@ use crate::biometry;
 use crate::utils::nvs::Certificate;
 
 pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+    #[allow(unreachable_code, unused_variables)]
     http_server.fn_handler("/reset-config", Method::Get, {
         move |mut request| {
             super::check_ip(&mut request)?;
@@ -17,12 +18,12 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             // Remove all templates from the sensor
             biometry::reset()?;
 
+            connection.initiate_response(204, None, &[("Content-Type", "text/html")])?;
+
             unsafe {
                 esp_idf_svc::sys::nvs_flash_erase();
-                esp_idf_svc::sys::nvs_flash_init();
+                esp_idf_svc::sys::esp_restart();
             }
-
-            connection.initiate_response(204, None, &[("Content-Type", "text/html")])?;
 
             Ok::<(), Error>(())
         }
