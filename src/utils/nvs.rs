@@ -11,8 +11,7 @@ fn get_str<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) 
 
     nvs.get_str(key, &mut buf)?;
 
-    let raw_value = core::str::from_utf8(&buf)
-        .map(|s| s.trim_end_matches('\0'))?;
+    let raw_value = core::str::from_utf8(&buf).map(|s| s.trim_end_matches('\0'))?;
 
     let mut value = HeaplessString::<N>::new();
 
@@ -40,7 +39,7 @@ fn get_certificate<const N: usize>(
     nvs.get_str(key, &mut buf)?;
 
     let mut value = HeaplessString::<N>::new();
-    
+
     value.push_str(core::str::from_utf8(&buf)?)?;
 
     Ok(value)
@@ -144,12 +143,12 @@ impl WgConfig {
     pub fn is_empty(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> bool {
         let nvs = nvs.lock().unwrap();
 
-        !(nvs.contains(Self::ADDR).unwrap_or(false) &&
-        nvs.contains(Self::PORT).unwrap_or(false) &&
-        nvs.contains(Self::CLIENT_PRIV).unwrap_or(false) &&
-        nvs.contains(Self::SERVER_PUB).unwrap_or(false) &&
-        nvs.contains(Self::ALLOWED_IP).unwrap_or(false) &&
-        nvs.contains(Self::ALLOWED_MASK).unwrap_or(false))
+        !(nvs.contains(Self::ADDR).unwrap_or(false)
+            && nvs.contains(Self::PORT).unwrap_or(false)
+            && nvs.contains(Self::CLIENT_PRIV).unwrap_or(false)
+            && nvs.contains(Self::SERVER_PUB).unwrap_or(false)
+            && nvs.contains(Self::ALLOWED_IP).unwrap_or(false)
+            && nvs.contains(Self::ALLOWED_MASK).unwrap_or(false))
     }
 
     /// Call to set the Wireguard configuration in nvs.
