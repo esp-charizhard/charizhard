@@ -68,35 +68,35 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
         }
     })?;
 
-        // Handler to send a request to generate an otp for a given email
-        http_server.fn_handler("/gen-otp", Method::Post, {
-            let nvs = Arc::clone(&nvs);
-            move |mut request| {
-                super::check_ip(&mut request)?;
-    
-                let mut body = Vec::new();
-                let mut buffer = [0u8; 128];
-    
-                loop {
-                    match request.read(&mut buffer) {
-                        Ok(0) => break,
-                        Ok(n) => body.extend_from_slice(&buffer[..n]),
-                        Err(e) => return Err(e.into()),
-                    }
+    // Handler to send a request to generate an otp for a given email
+    http_server.fn_handler("/gen-otp", Method::Post, {
+        let nvs = Arc::clone(&nvs);
+        move |mut request| {
+            super::check_ip(&mut request)?;
+
+            let mut body = Vec::new();
+            let mut buffer = [0u8; 128];
+
+            loop {
+                match request.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => body.extend_from_slice(&buffer[..n]),
+                    Err(e) => return Err(e.into()),
                 }
-    
-                let otp_request: OtpGenRequest = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
-    
-                let connection = request.connection();
-    
-                match mtls::send_otp(Arc::clone(&nvs), &otp_request.email) {
-                    Ok(_) => connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?,
-                    Err(_) => connection.initiate_response(401, Some("KO"), &[("Content-Type", "text/html")])?,
-                }
-    
-                Ok::<(), Error>(())
             }
-        })?;
+
+            let otp_request: OtpGenRequest = serde_urlencoded::from_str(String::from_utf8(body)?.as_str())?;
+
+            let connection = request.connection();
+
+            match mtls::send_otp(Arc::clone(&nvs), &otp_request.email) {
+                Ok(_) => connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?,
+                Err(_) => connection.initiate_response(401, Some("KO"), &[("Content-Type", "text/html")])?,
+            }
+
+            Ok::<(), Error>(())
+        }
+    })?;
 
     // Handler to enroll a user into the biometric module.
     http_server.fn_handler("/enroll-user", Method::Get, {

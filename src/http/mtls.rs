@@ -10,7 +10,6 @@ const HOSTNAME: &str = "charizhard-otp.duckdns.org";
 
 static CA_CERT: &str = include_str!("../certs/ca.pem");
 
-
 /// Fetches a wireguard configuration through mtls given an email and an otp.
 pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str) -> anyhow::Result<()> {
     let mut tls = EspTls::new()?;
@@ -79,7 +78,8 @@ pub fn fetch_config(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str, otp: &str)
     Ok(())
 }
 
-/// Asks the server to generate an otp and send it to the provided email through mtls.
+/// Asks the server to generate an otp and send it to the provided email through
+/// mtls.
 pub fn send_otp(nvs: Arc<Mutex<EspNvs<NvsDefault>>>, email: &str) -> anyhow::Result<()> {
     let mut tls = EspTls::new()?;
 
