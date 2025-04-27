@@ -38,7 +38,7 @@ async function connectWifi(event) {
 			let first_boot = await isFirstBoot();
 			
 			if (first_boot) {
-				window.location.href = "/otp";
+				window.location.href = "/gen-otp";
 			} else {
 				window.location.href = "/status";
 			}

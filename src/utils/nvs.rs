@@ -154,7 +154,7 @@ impl WgConfig {
         {
             "false" => Ok(false),
             "true" => Ok(true),
-            _ => unreachable!(),
+            _ => Ok(true),
         }
     }
 

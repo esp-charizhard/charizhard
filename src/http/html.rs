@@ -117,6 +117,42 @@ pub fn otp_html() -> anyhow::Result<String> {
     ))
 }
 
+/// Gives the html for the "/otp" handler
+pub fn gen_otp_html() -> anyhow::Result<String> {
+    let favicon = BASE64_STANDARD.encode(FAVICON_DATA);
+
+    Ok(format!(
+        r###"
+            <!DOCTYPE html>
+            <html lang="en">
+                <head>
+                    <link rel="icon" type="image/png" href="data:image/png;base64,{favicon}">
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Charizhard</title>
+                    <link rel="stylesheet" href="gen_otp.css">
+                </head>
+
+                <body>
+                    <div class="top-container">
+                        <h1>Configuration</h1>
+                        
+                        <form id="config" method="post" action="/gen-otp">
+                            <label for="email">Email</label>
+                            <input type="text" id="email" name="email" value="" required>
+
+                            <div class="error" id="mtls-error"></div>
+
+                            <button type="submit">Verify</button>
+                        </form>
+                    </div>
+                </body>
+                <script src="gen_otp.js"></script>
+            </html>
+        "###
+    ))
+}
+
 /// Gives the html for the "/admin" handler
 pub fn admin_html() -> anyhow::Result<String> {
     let favicon = BASE64_STANDARD.encode(FAVICON_DATA);

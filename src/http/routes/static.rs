@@ -59,6 +59,34 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>) -> anyhow::Result<()
         Ok::<(), Error>(())
     })?;
 
+    http_server.fn_handler("/gen_otp.js", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/gen_otp/gen_otp.js");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "application/javascript")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
+    http_server.fn_handler("/gen_otp.css", Method::Get, move |mut request| {
+        super::check_ip(&mut request)?;
+
+        let connection = request.connection();
+
+        let file = include_str!("../static/gen_otp/gen_otp.css");
+
+        connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/css")])?;
+
+        connection.write(file.as_bytes())?;
+
+        Ok::<(), Error>(())
+    })?;
+
     http_server.fn_handler("/admin.js", Method::Get, move |mut request| {
         super::check_ip(&mut request)?;
 

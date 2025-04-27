@@ -12,7 +12,7 @@ mod html;
 mod mtls;
 mod routes;
 
-use html::{admin_html, index_html, otp_html, status_html};
+use html::{admin_html, gen_otp_html, index_html, otp_html, status_html};
 use routes::{set_admin_routes, set_otp_routes, set_static_routes, set_wg_routes, set_wifi_routes};
 
 /// Checks that the source ip of the request is [`ETH_GATEWAY`] + 1. This
@@ -75,6 +75,23 @@ pub fn start(
             let connection = request.connection();
 
             let html = otp_html()?;
+
+            connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
+
+            connection.write(html.as_bytes())?;
+
+            Ok::<(), Error>(())
+        }
+    })?;
+
+    // Handler to get the admin config page
+    http_server.fn_handler("/gen-otp", Method::Get, {
+        move |mut request| {
+            self::check_ip(&mut request)?;
+
+            let connection = request.connection();
+
+            let html = gen_otp_html()?;
 
             connection.initiate_response(200, Some("OK"), &[("Content-Type", "text/html")])?;
 
