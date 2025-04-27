@@ -122,8 +122,11 @@ pub fn template_count(chain: *mut HcpCom) -> anyhow::Result<u16> {
 }
 
 /// Gets the template data for `template_id`.
-pub fn get_template<const DATA_SIZE: usize>(chain: *mut HcpCom, template_id: u16) -> anyhow::Result<[u8; DATA_SIZE]> {
-    let mut data = [0u8; DATA_SIZE];
+pub fn get_template<const DATA_SIZE: usize>(
+    chain: *mut HcpCom,
+    template_id: u16,
+) -> anyhow::Result<Box<[u8; DATA_SIZE]>> {
+    let mut data = Box::new([0u8; DATA_SIZE]);
 
     check_fpc!(bep_template_load_storage(chain, template_id));
 

@@ -24,7 +24,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
 
             let connection = request.connection();
 
-            match WgConfig::is_empty(Arc::clone(&nvs)) {
+            match WgConfig::is_empty(Arc::clone(&nvs))? {
                 true => connection.initiate_response(204, Some("true"), &[("Content-Type", "text/html")])?,
                 false => connection.initiate_response(200, Some("false"), &[("Content-Type", "text/html")])?,
             }
@@ -72,7 +72,7 @@ pub fn set_routes(http_server: &mut EspHttpServer<'static>, nvs: Arc<Mutex<EspNv
             // No user has been enrolled yet and the config is filled. This should only ever
             // be the case when we just fetched a wireguard configuration with the
             // /verify-otp endpoint.
-            if !biometry::is_user_enrolled()? && !WgConfig::is_empty(Arc::clone(&nvs)) {
+            if !biometry::is_user_enrolled()? && !WgConfig::is_empty(Arc::clone(&nvs))? {
                 biometry::enroll_user()?;
                 // Once enrolled we need to save the fingerprint on the esp32 to be able to
                 // detect hardware attacks performed on the sensor while the esp32 is powered

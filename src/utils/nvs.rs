@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use esp_idf_svc::nvs::{EspNvs, NvsDefault};
@@ -21,10 +22,13 @@ fn get_str<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) 
 }
 
 /// Retrieves and sanitizes a fingerprint from nvs.
-fn get_fingerprint<const N: usize>(nvs: &MutexGuard<'_, EspNvs<NvsDefault>>, key: &str) -> anyhow::Result<[u8; N]> {
-    let mut buf = [0u8; N];
+fn get_fingerprint<const N: usize>(
+    nvs: &MutexGuard<'_, EspNvs<NvsDefault>>,
+    key: &str,
+) -> anyhow::Result<Box<[u8; N]>> {
+    let mut buf = Box::new([0u8; N]);
 
-    nvs.get_blob(key, &mut buf)?;
+    nvs.get_blob(key, &mut *buf)?;
 
     Ok(buf)
 }
@@ -46,16 +50,16 @@ fn get_certificate<const N: usize>(
 }
 
 pub struct Fingerprint {
-    pub template: [u8; 2048],
+    pub template: Box<[u8; 2048]>,
 }
 
 impl Fingerprint {
     const TEMPLATE: &'static str = "TEMPLATE";
 
-    pub fn set_template(template: &[u8; 2048], nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
+    pub fn set_template(template: Box<[u8; 2048]>, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()> {
         let nvs = nvs.lock().unwrap();
 
-        nvs.set_blob(Self::TEMPLATE, template)?;
+        nvs.set_blob(Self::TEMPLATE, &*template)?;
 
         Ok(())
     }
@@ -136,19 +140,22 @@ impl WgConfig {
     const ALLOWED_IP: &'static str = "ALLOWEDIP";
     const ALLOWED_MASK: &'static str = "ALLOWEDMASK";
     const CLIENT_PRIV: &'static str = "PRIVKEY";
+    const EMPTY_CONFIG: &'static str = "EMPTY";
     const PORT: &'static str = "PORT";
     const SERVER_PUB: &'static str = "PUBKEY";
 
     /// Checks whether nvs contains a configuration.
-    pub fn is_empty(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> bool {
+    pub fn is_empty(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<bool> {
         let nvs = nvs.lock().unwrap();
 
-        !(nvs.contains(Self::ADDR).unwrap_or(false)
-            && nvs.contains(Self::PORT).unwrap_or(false)
-            && nvs.contains(Self::CLIENT_PRIV).unwrap_or(false)
-            && nvs.contains(Self::SERVER_PUB).unwrap_or(false)
-            && nvs.contains(Self::ALLOWED_IP).unwrap_or(false)
-            && nvs.contains(Self::ALLOWED_MASK).unwrap_or(false))
+        match get_str::<8>(&nvs, Self::EMPTY_CONFIG)
+            .unwrap_or(HeaplessString::from_str("true")?)
+            .as_str()
+        {
+            "false" => Ok(false),
+            "true" => Ok(true),
+            _ => unreachable!(),
+        }
     }
 
     /// Call to set the Wireguard configuration in nvs.
@@ -161,6 +168,8 @@ impl WgConfig {
         nvs.set_str(Self::SERVER_PUB, self.serv_pub_key.clean_string().as_str())?;
         nvs.set_str(Self::ALLOWED_IP, self.allowed_ip.clean_string().as_str())?;
         nvs.set_str(Self::ALLOWED_MASK, self.allowed_mask.clean_string().as_str())?;
+
+        nvs.set_str(Self::EMPTY_CONFIG, "false")?;
 
         Ok(())
     }

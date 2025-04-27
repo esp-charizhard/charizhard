@@ -32,16 +32,13 @@ fn main() -> anyhow::Result<()> {
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
     biometry::init()?;
-    // biometry::store_template(Arc::clone(&nvs_config))?;
 
-    match (biometry::is_user_enrolled()?, WgConfig::is_empty(Arc::clone(&nvs_config))) {
+    match (biometry::is_user_enrolled()?, WgConfig::is_empty(Arc::clone(&nvs_config))?) {
         // User enrolled, Empty config.
-        // Should not happen but is not problematic.
-        (true, true) => {
-            log::warn!("User enrolled, but no config was found.");
-        }
-        // User enrolled, Set config.
-        // We need to check for template tampering while the key was in a powered down state.
+        // This should never happen and will invariably result in UB later on in the execution process.
+        (true, true) => unreachable!("User enrolled, but no config was found."),
+        // User enrolled, Set config || User enrolled, Empty config (this second case should never happen, but is not
+        // problematic). We need to check for template tampering while the key was in a powered down state.
         (true, false) => {
             // Authenticate user
             while biometry::check_user().is_err() {}
@@ -52,9 +49,6 @@ fn main() -> anyhow::Result<()> {
             if biometry::match_template(0.9, Arc::clone(&nvs_config)).is_err() {
                 log::error!("Similitude check failed! Wiping configuration..");
 
-                unreachable!("Should not go past this for dev");
-
-                #[allow(unreachable_code)]
                 biometry::reset()?;
 
                 unsafe {

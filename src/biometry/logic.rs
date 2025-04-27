@@ -187,7 +187,7 @@ pub fn store_template(nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyhow::Result<()>
     let template = get_template::<2048>(ctx.chain, 1)?;
 
     // Save into nvs.
-    Fingerprint::set_template(&template, Arc::clone(&nvs))?;
+    Fingerprint::set_template(template, Arc::clone(&nvs))?;
 
     Ok(())
 }
@@ -205,11 +205,11 @@ pub fn match_template(min_sim: f32, nvs: Arc<Mutex<EspNvs<NvsDefault>>>) -> anyh
         return Err(anyhow::anyhow!("SENSOR_CTX is not set!"));
     }
 
-    let stored_template: [u8; 2048] = Fingerprint::get_template(Arc::clone(&nvs))?.template;
-    let template: [u8; 2048] = get_template::<2048>(ctx.chain, 1)?;
+    let stored_template = &*Fingerprint::get_template(Arc::clone(&nvs))?.template;
+    let template = &*get_template::<2048>(ctx.chain, 1)?;
 
-    let norm_sim = normalized_similarity(&stored_template, &template)?;
-    let cos_sim = cosine_similarity(&stored_template, &template)?;
+    let norm_sim = normalized_similarity(stored_template, template)?;
+    let cos_sim = cosine_similarity(stored_template, template)?;
 
     log::info!("Normalized similarity: {:.2}%", norm_sim * 100.0);
     log::info!("Cosine similarity: {:.2}%", cos_sim * 100.0);
