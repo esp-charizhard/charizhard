@@ -29,7 +29,7 @@ debug = true    # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
 [patch.crates-io]
-esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc", branch = "master" }
+esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc", rev = "65fdf52" }
 esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys", branch = "master" }
 esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf-hal", branch = "master" }
 embedded-hal = { git = "https://github.com/rust-embedded/embedded-hal", branch = "master" }
