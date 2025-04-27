@@ -66,6 +66,7 @@ pub fn remove_all_templates(chain: *mut HcpCom) -> anyhow::Result<()> {
 
 /// Enrolls a finger. Created template MUST be stored to flash storage or risk
 /// being destroyed on power loss.
+#[allow(non_snake_case)]
 pub fn enroll_finger(chain: *mut HcpCom) -> anyhow::Result<()> {
     log::info!("Enrolling finger..");
 
