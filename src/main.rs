@@ -32,13 +32,14 @@ fn main() -> anyhow::Result<()> {
     let nvs_config = Arc::new(Mutex::new(EspNvs::new(nvs.clone(), "config", true)?));
 
     biometry::init()?;
-
     // biometry::store_template(Arc::clone(&nvs_config))?;
 
     match (biometry::is_user_enrolled()?, WgConfig::is_empty(Arc::clone(&nvs_config))) {
         // User enrolled, Empty config.
         // Should not happen but is not problematic.
-        (true, true) => {}
+        (true, true) => {
+            log::warn!("User enrolled, but no config was found.");
+        }
         // User enrolled, Set config.
         // We need to check for template tampering while the key was in a powered down state.
         (true, false) => {
@@ -67,7 +68,9 @@ fn main() -> anyhow::Result<()> {
         }
         // No user enrolled, No config.
         // We do nothing in this case, the key is in factory state.
-        (false, true) => {}
+        (false, true) => {
+            log::info!("Dongle in factory state.");
+        }
         // No user enrolled (or more than 1), Set config.
         // Tampering has occurred. We wipe the dongle.
         (false, false) => {

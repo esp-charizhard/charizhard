@@ -23,7 +23,7 @@ use crate::utils::nvs::Fingerprint;
 /// with the BM-Lite. This should always be called once and only once at th
 /// ebeginning of the
 fn init_config() -> anyhow::Result<(*mut Params, *mut PinsConfig, *mut HcpCom)> {
-    let pkt_buffer = Box::into_raw(Box::new([0u8; 1024 * 5])) as *mut u8;
+    let pkt_buffer = Box::into_raw(Box::new([0u8; 1024 * 3])) as *mut u8;
     let txrx_buffer = Box::into_raw(Box::new([0u8; MTU as usize])) as *mut u8;
 
     let chain = Box::into_raw(Box::new(HcpCom {
@@ -32,7 +32,7 @@ fn init_config() -> anyhow::Result<(*mut Params, *mut PinsConfig, *mut HcpCom)> 
         phy_rx_timeout: 2000,
         pkt_buffer,
         pkt_size: 0,
-        pkt_size_max: 1024 * 5,
+        pkt_size_max: 1024 * 3,
         txrx_buffer,
         arg: HcpArg::default(),
         bep_result: 0,
@@ -71,7 +71,6 @@ pub fn init() -> anyhow::Result<()> {
     }
 
     let (params, pins_config, chain) = init_config()?;
-
     // This needs to be called before any other bmlite interface function. Failure
     // to do this results will invariably result in UB.
     init_sensor(params)?;
