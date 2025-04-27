@@ -37,7 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	form.addEventListener("submit", async (e) => {
 		e.preventDefault();
 
-		// Get form data using FormData
 		const formData = new FormData(form);
 		const data = new URLSearchParams(formData).toString();
 
@@ -51,11 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 
 			if (response.ok) {
-				// Clear the textareas after successful submission
 				document.getElementById("cert").value = "";
 				document.getElementById("certprivkey").value = "";
 
-				// Optionally, display a success message
 				errorDiv.textContent = "Configuration saved successfully.";
 				errorDiv.style.color = "green";
 			} else {

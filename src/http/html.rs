@@ -99,21 +99,22 @@ pub fn otp_html() -> anyhow::Result<String> {
                         <h1>Configuration</h1>
                         
                         <form id="config" method="post" action="/verify-otp">
-                            <label for="email">Email</label>
-                            <input type="text" id="email" name="email" value="" required>
+                            <input type="hidden" id="email" name="email" value="" required>
 
                             <label for="otp">One Time Password</label>
                             <input type="text" id="otp" name="otp" value="" required>
                             
                             <div class="error" id="mtls-error"></div>
 
-                            <button type="submit">Verify</button>
+                            <img id="loading-svg" src="spinner.svg" alt="Loading...">
+
+                            <button type="submit" id="submit-button">Verify</button>
                         </form>
                     </div>
                 </body>
                 <script src="otp.js"></script>
             </html>
-        "###
+        "###,
     ))
 }
 
@@ -143,13 +144,15 @@ pub fn gen_otp_html() -> anyhow::Result<String> {
 
                             <div class="error" id="mtls-error"></div>
 
-                            <button type="submit">Verify</button>
+                            <img id="loading-svg" src="spinner.svg" alt="Loading...">
+
+                            <button type="submit" id="submit-button">Verify</button>
                         </form>
                     </div>
                 </body>
                 <script src="gen_otp.js"></script>
             </html>
-        "###
+        "###,
     ))
 }
 

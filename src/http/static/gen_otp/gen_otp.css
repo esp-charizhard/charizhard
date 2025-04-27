@@ -85,3 +85,10 @@ button:active {
 .error {
 	text-align: center;
 }
+
+#loading-svg {
+	display: none;
+	width: 35%;
+	height: 35%;
+	margin: auto;
+}

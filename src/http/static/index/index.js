@@ -69,32 +69,34 @@ async function isFirstBoot() {
 }
 
 async function fetchScannedWifis() {
-	let scanned_wifis = document.getElementById("inner-scanned-wifis");
-	scanned_wifis.innerHTML = "";
+	const scannedWifisContainer = document.getElementById("inner-scanned-wifis");
+	const loadingSvg = document.getElementById("loading-svg");
+
+	scannedWifisContainer.innerHTML = "";
 
 	try {
-		document.getElementById("loading-svg").style.display = "flex";
+		loadingSvg.style.display = "flex";
 
 		const response = await fetch("/scan-wifi");
 
-		if (!response.ok) throw new Error("Error fetching scanned Wi-Fis.");
+		if (!response.ok) {
+			throw new Error("Error fetching scanned Wi-Fis.");
+		}
 
-		const scannedWifis = await response.text();
-
-		document.getElementById("loading-svg").style.display = "none";
-
-		scanned_wifis.innerHTML = scannedWifis;
+		const scannedWifisHtml = await response.text();
+		scannedWifisContainer.innerHTML = scannedWifisHtml;
 
 		document.querySelectorAll('.wifi-connect button[type="submit"]').forEach((button) => {
 			button.addEventListener("click", connectWifi);
 		});
 	} catch (error) {
-		scanned_wifis.style.fontWeight = "bold";
-		scanned_wifis.innerHTML = "Failed to scan WI-Fis.";
-
-		document.getElementById("loading-svg").style.display = "none";
+		scannedWifisContainer.style.fontWeight = "bold";
+		scannedWifisContainer.innerHTML = "Failed to scan Wi-Fis.";
+	} finally {
+		loadingSvg.style.display = "none";
 	}
 }
+
 
 function toggleDropdown(event, element) {
 	if (event.target.closest(".wifi-connect")) return;
