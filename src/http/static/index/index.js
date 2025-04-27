@@ -97,7 +97,6 @@ async function fetchScannedWifis() {
 	}
 }
 
-
 function toggleDropdown(event, element) {
 	if (event.target.closest(".wifi-connect")) return;
 
