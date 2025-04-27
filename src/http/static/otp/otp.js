@@ -31,14 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 				const response = await fetch("/enroll-user");
 
-				if(response.ok) {
+				if (response.ok) {
 					errorDiv.textContent = "OK.";
 					window.location.href = "/status";
-				}
-				else {
+				} else {
 					errorDiv.textContent = "Failed to enroll finger.";
 				}
-				
 			} else {
 				errorDiv.textContent = "Failed to verify OTP.";
 				errorDiv.style.color = "red";

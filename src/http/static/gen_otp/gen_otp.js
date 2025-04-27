@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (response.status === 200) {
 				errorDiv.textContent = "OK.";
 				window.location.href = "/otp";
-				
 			} else {
 				errorDiv.textContent = "Failed to send request or email may be invalid.";
 				errorDiv.style.color = "red";
