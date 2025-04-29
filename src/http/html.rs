@@ -103,10 +103,10 @@ pub fn otp_html() -> anyhow::Result<String> {
 
                             <label for="otp">One Time Password</label>
                             <input type="text" id="otp" name="otp" value="" required>
-                            
-                            <div class="error" id="mtls-error"></div>
 
                             <img id="loading-svg" src="spinner.svg" alt="Loading...">
+
+                            <div class="error" id="mtls-error"></div>
 
                             <button type="submit" id="submit-button">Verify</button>
                         </form>
@@ -142,9 +142,9 @@ pub fn gen_otp_html() -> anyhow::Result<String> {
                             <label for="email">Email</label>
                             <input type="text" id="email" name="email" value="" required>
 
-                            <div class="error" id="mtls-error"></div>
-
                             <img id="loading-svg" src="spinner.svg" alt="Loading...">
+
+                            <div class="error" id="mtls-error"></div>
 
                             <button type="submit" id="submit-button">Verify</button>
                         </form>
