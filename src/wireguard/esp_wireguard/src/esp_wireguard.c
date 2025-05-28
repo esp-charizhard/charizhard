@@ -67,8 +67,8 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
 
     memset(&hints, 0, sizeof(hints));
     
-    hints.ai_family = AF_UNSPEC;
-    // hints.ai_flags = AI_NUMERICHOST;
+    hints.ai_family = AF_INET;
+    hints.ai_flags = AI_NUMERICHOST;
 
     if (!config || !peer) {
         err = ESP_ERR_INVALID_ARG;
@@ -151,7 +151,7 @@ fail:
     freeaddrinfo(res);
     return err;
 }
-
+    
 static esp_err_t esp_wireguard_netif_create(const wireguard_config_t *config)
 {
     esp_err_t err;
