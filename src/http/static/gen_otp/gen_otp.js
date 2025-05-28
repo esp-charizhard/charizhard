@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			submitButton.disabled = true;
 			emailInput.style.display = "none";
 			emailLabel.style.display = "none";
+			errorDiv.textContent = "";
 
 			const response = await fetch("/gen-otp", {
 				method: "POST",
